@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everything – setup keys</title>
+<style>
+ body{font:15px/1.5 -apple-system,system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 16px;color:#16161a}
+ code{display:block;background:#f1f1f5;padding:10px;border-radius:8px;word-break:break-all;margin:4px 0 16px;user-select:all;-webkit-user-select:all}
+ button{font:inherit;padding:10px 16px;border-radius:10px;border:0;background:#5b5bd6;color:#fff}
+ b{display:block;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>Setup keys</h1>
+<p>These are generated on your device and never sent anywhere. Copy each value into Vercel → Settings → Environment Variables. Generate them <b style="display:inline">once</b> – if you change them later, notifications must be turned on again.</p>
+<button onclick="gen()">Generate keys</button>
+<div id="out"></div>
+<script>
+const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function gen() {
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const pub = b64url(new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey)));
+  const priv = (await crypto.subtle.exportKey('jwk', kp.privateKey)).d;
+  const secret = [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  document.getElementById('out').innerHTML =
+    `<b>VAPID_PUBLIC_KEY</b><code>${pub}</code><b>VAPID_PRIVATE_KEY</b><code>${priv}</code><b>CRON_SECRET</b><code>${secret}</code>`;
+}
+</script>
+</body>
+</html>
