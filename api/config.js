@@ -1,0 +1,9 @@
+// Public settings the browser needs (safe to expose).
+export default function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
+  });
+}
