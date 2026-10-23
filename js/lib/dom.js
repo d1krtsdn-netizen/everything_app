@@ -32,6 +32,37 @@ export const isPast = (iso) => !!iso && new Date(iso) < new Date();
 export const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 export const dateAsc = (a, b) => (a ? new Date(a).getTime() : Infinity) - (b ? new Date(b).getTime() : Infinity) || 0;
 
+export function monthSections(items) {
+  const monthFormatter = new Intl.DateTimeFormat('en-GB', {
+    month: 'long', year: 'numeric', timeZone: 'Europe/London',
+  });
+  const keyFormatter = new Intl.DateTimeFormat('en-GB', {
+    month: '2-digit', year: 'numeric', timeZone: 'Europe/London',
+  });
+  const groups = new Map();
+  const undated = [];
+
+  for (const item of items) {
+    if (!item.due_at) { undated.push(item); continue; }
+    const dateValue = /^\d{4}-\d{2}-\d{2}$/.test(item.due_at)
+      ? `${item.due_at}T12:00:00Z`
+      : item.due_at;
+    const date = new Date(dateValue);
+    if (isNaN(date)) { undated.push(item); continue; }
+
+    const parts = Object.fromEntries(keyFormatter.formatToParts(date).map(({ type, value }) => [type, value]));
+    const key = `${parts.year}-${parts.month}`;
+    if (!groups.has(key)) groups.set(key, { title: monthFormatter.format(date), items: [] });
+    groups.get(key).items.push(item);
+  }
+
+  const sections = [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, section]) => ({ ...section, divider: true }));
+  if (undated.length) sections.push({ title: 'No date', items: undated });
+  return sections;
+}
+
 // <input type="datetime-local"> uses local time strings
 export function toLocalInput(iso) {
   if (!iso) return '';
