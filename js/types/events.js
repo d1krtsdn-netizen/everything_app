@@ -1,5 +1,5 @@
 // EVENTS – cards created from shared links (see /api/share and /api/parse-link).
-import { h, fmtDate, startOfToday, dateAsc, extractUrl } from '../lib/dom.js';
+import { h, fmtDate, startOfToday, dateAsc, extractUrl, monthSections } from '../lib/dom.js';
 import { linkOut, reminderBadge, statusSegment } from '../views/card.js';
 import { reminderField } from './fields.js';
 
@@ -47,6 +47,7 @@ export default {
   ],
   defaultFilter: 'upcoming',
   sort: (a, b) => dateAsc(a.due_at, b.due_at),
+  sections: monthSections,
 
   async onQuickAdd(text, { create, parseLink, toast }) {
     const url = extractUrl(text);

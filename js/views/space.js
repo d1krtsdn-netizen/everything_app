@@ -84,7 +84,8 @@ export async function renderSpace(root, spaceId, params) {
           ontoggle: (e) => { openSections[sec.title] = e.target.open; } },
           h('summary', null, sec.title, ' ', h('span', { class: 'count' }, sec.items.length)), cards));
       } else {
-        out.push(h('section', { class: 'section' }, h('h3', { class: 'section-title' }, sec.title), cards));
+        out.push(h('section', { class: 'section' + (sec.divider ? ' month-section' : '') },
+          h('h3', { class: 'section-title' + (sec.divider ? ' month-divider' : '') }, sec.title), cards));
       }
     }
     if (!shown.filter((i) => type.hideFilters ? i.status !== type.doneStatus : true).length) {

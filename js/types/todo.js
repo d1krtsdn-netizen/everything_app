@@ -1,5 +1,5 @@
 // TO-DO – tasks with priority, deadline and status.
-import { h, fmtDate, isPast, dateAsc } from '../lib/dom.js';
+import { h, fmtDate, isPast, dateAsc, monthSections } from '../lib/dom.js';
 import { reminderField } from './fields.js';
 
 const PRIORITY = {
@@ -41,6 +41,7 @@ export default {
   ],
   defaultFilter: 'open',
   sort: (a, b) => (a.status === 'done') - (b.status === 'done') || rank(a) - rank(b) || dateAsc(a.due_at, b.due_at),
+  sections: monthSections,
 
   meta(item) {
     const p = PRIORITY[item.data?.priority || 'medium'] || PRIORITY.medium;
