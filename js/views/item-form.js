@@ -82,7 +82,7 @@ function makeControl(f, value, controls, type) {
       input = h('input', { type: 'datetime-local', value: toLocalInput(value) });
       break;
     case 'number':
-      input = h('input', { type: 'number', inputmode: 'decimal', value: value ?? '' });
+      input = h('input', { type: 'number', step: f.step || 'any', inputmode: 'decimal', value: value ?? '' });
       break;
     case 'checkbox':
       input = h('input', { type: 'checkbox', checked: !!value });
@@ -101,9 +101,11 @@ function makeControl(f, value, controls, type) {
     if (f.type === 'datetime') input.value = toLocalInput(v);
     else if (f.type === 'checkbox') input.checked = !!v;
     else input.value = v ?? '';
+    refreshPreview();
   };
 
   let el = input;
+  let refreshPreview = () => {};
 
   // "Fetch details" button next to a link field (types with fromLink)
   if (f.importButton && type.fromLink) {
@@ -128,6 +130,52 @@ function makeControl(f, value, controls, type) {
         set(new Date(new Date(base).getTime() - p.minutes * 60000).toISOString());
       } }, p.label)),
       h('button', { type: 'button', class: 'chip small', onclick: () => set(null) }, 'Clear')));
+  }
+
+  if (f.logoButtons) {
+    const preview = h('span', { class: 'logo-preview' });
+    const previewImage = h('img', {
+      class: 'logo-preview-image', alt: '', hidden: true,
+      onerror: () => { previewImage.hidden = true; previewFallback.hidden = false; },
+    });
+    const previewFallback = h('span', { class: 'logo-preview-fallback' });
+    preview.replaceChildren(previewImage, previewFallback);
+    refreshPreview = () => {
+      const url = input.value.trim();
+      const name = controls.title?.get() || '';
+      previewFallback.textContent = Array.from(name.trim())[0] || '?';
+      if (url !== previewImage.dataset.url) {
+        previewImage.dataset.url = url;
+        previewImage.hidden = !url;
+        previewFallback.hidden = !!url;
+        if (url) previewImage.src = url;
+      } else if (!url) {
+        previewImage.hidden = true;
+        previewFallback.hidden = false;
+      }
+    };
+
+    input.addEventListener('input', refreshPreview);
+    controls.title?.el.addEventListener('input', refreshPreview);
+
+    const useWebsiteLogo = h('button', { type: 'button', class: 'btn small', onclick: () => {
+      const website = controls.website?.get();
+      if (!website) return toast('Add the website first');
+      try {
+        const domain = new URL(website).hostname;
+        if (!domain) throw new Error('Website has no domain');
+        set(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`);
+      } catch { toast('Enter a valid website URL'); }
+    } }, 'Use website logo');
+    const searchOnline = h('button', { type: 'button', class: 'btn small', onclick: () => {
+      const name = controls.title?.get();
+      if (!name) return toast('Add a name first');
+      window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${name} logo`)}`, '_blank', 'noopener,noreferrer');
+    } }, 'Search online');
+    el = h('div', { class: 'logo-field' },
+      h('div', { class: 'logo-input-row' }, input, preview),
+      h('div', { class: 'logo-tools' }, useWebsiteLogo, searchOnline));
+    refreshPreview();
   }
 
   return { el, get, set };
