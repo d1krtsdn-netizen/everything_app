@@ -75,4 +75,21 @@ export default {
         h('div', { class: 'meta' }, linkOut(d.url), reminderBadge(item)),
         statusSegment(item, ctx)));
   },
+
+  compactCard(item, ctx) {
+    const d = item.data || {};
+    const status = ctx.type.statuses.find((s) => s.id === item.status) || ctx.type.statuses[0];
+    const dim = item.status === 'not_going' || !upcoming(item);
+    return h('article', { class: 'card compact-card compact-event' + (dim ? ' dim' : ''), onclick: ctx.edit },
+      d.image
+        ? h('img', { class: 'compact-event-img', src: d.image, alt: '', loading: 'lazy',
+          referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() })
+        : null,
+      h('div', { class: 'compact-card-body' },
+        h('h3', { class: 'compact-title' }, item.title || 'Untitled event'),
+        h('div', { class: 'compact-date' }, item.due_at ? fmtDate(item.due_at) : 'Date not set'),
+        d.location ? h('div', { class: 'compact-location' }, d.location) : null,
+        d.price ? h('div', { class: 'compact-price' }, d.price) : null,
+        h('span', { class: 'compact-status', style: `--c:${status.color}` }, status.label)));
+  },
 };

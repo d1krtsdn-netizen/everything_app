@@ -67,12 +67,34 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .chip .count { opacity: .65; font-size: 12px; }
 .chip.small { padding: 4px 10px; font-size: 13px; }
+.view-controls { display: flex; justify-content: flex-end; gap: 4px; margin: 0 0 8px; }
+.view-toggle { width: 38px; height: 36px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--muted); font-size: 20px; cursor: pointer; }
+.view-toggle.on { background: var(--accent-2); border-color: var(--accent); color: var(--accent); }
 .list { display: flex; flex-direction: column; gap: 10px; }
 .section { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .section-title, .section > summary { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 8px 4px 0; }
 .month-section { gap: 10px; margin-top: 12px; }
 .month-divider { display: flex; align-items: center; gap: 12px; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 700; color: var(--text); }
 .month-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.list.compact-list { gap: 10px; }
+.compact-list .section:not(details) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+.compact-list .section-title { grid-column: 1 / -1; }
+.compact-card { min-width: 0; width: 100%; height: auto; aspect-ratio: 3 / 4; display: flex; flex-direction: column; overflow: hidden; border-radius: 13px; }
+.compact-event-img { display: block; width: 100%; height: 54px; flex: none; object-fit: contain; background: var(--accent-2); }
+.compact-card-body { min-width: 0; padding: 7px; display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 3px; overflow: hidden; }
+.compact-title { display: -webkit-box; width: 100%; margin: 0; overflow: hidden; color: var(--text); font-size: 12px; line-height: 1.25; font-weight: 650; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.compact-date, .compact-location, .compact-price { width: 100%; overflow: hidden; color: var(--muted); font-size: 10px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.compact-date.overdue { color: var(--danger); }
+.compact-price { color: var(--text); font-weight: 700; }
+.compact-status { display: block; max-width: 100%; margin-top: auto; overflow: hidden; padding: 2px 6px; border-radius: 99px; background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.compact-todo { align-self: start; min-height: 0; aspect-ratio: auto; }
+.compact-todo .compact-card-body { flex: 0 0 auto; }
+.compact-todo .compact-status { margin-top: 4px; }
+@media (min-width: 600px) {
+  .compact-status { margin-top: 4px; }
+  .compact-event-img { flex: 1 1 auto; height: auto; min-height: 54px; }
+  .compact-event .compact-card-body { flex: 0 0 auto; }
+}
 details.section > summary { cursor: pointer; list-style: none; }
 details.section > summary::-webkit-details-marker { display: none; }
 .empty { text-align: center; color: var(--muted); padding: 36px 0; }

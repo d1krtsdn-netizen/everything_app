@@ -24,11 +24,14 @@ export async function renderSpace(root, spaceId, params) {
     ...type.statuses.map((s) => ({ id: s.id, label: s.label, test: (i) => i.status === s.id })),
   ];
   let filter = sessionStorage.getItem('filter-' + spaceId) || type.defaultFilter || filters[0].id;
+  const viewKey = 'space-view-' + spaceId;
+  let view = type.compactCard && localStorage.getItem(viewKey) === 'compact' ? 'compact' : 'list';
   let items = [];
   const openSections = {};
 
   const list = h('div', { class: 'list' });
   const chips = h('div', { class: 'chips' });
+  const viewControls = h('div', { class: 'view-controls', 'aria-label': 'Card layout' });
   const suggestions = h('datalist', { id: 'suggest-' + spaceId });
 
   const reload = async () => {
@@ -64,6 +67,17 @@ export async function renderSpace(root, spaceId, params) {
   };
 
   function draw() {
+    list.className = 'list' + (view === 'compact' ? ' compact-list' : '');
+    if (type.compactCard) {
+      viewControls.replaceChildren(
+        h('button', { class: 'view-toggle' + (view === 'list' ? ' on' : ''), type: 'button',
+          'aria-label': 'List view', 'aria-pressed': view === 'list', title: 'List view',
+          onclick: () => setView('list') }, '☰'),
+        h('button', { class: 'view-toggle' + (view === 'compact' ? ' on' : ''), type: 'button',
+          'aria-label': 'Compact grid view', 'aria-pressed': view === 'compact', title: 'Compact grid view',
+          onclick: () => setView('compact') }, '▦'));
+    } else viewControls.replaceChildren();
+
     chips.replaceChildren(...(type.hideFilters ? [] : filters.map((f) =>
       h('button', { class: 'chip' + (f.id === filter ? ' on' : ''), onclick: () => {
         filter = f.id; sessionStorage.setItem('filter-' + spaceId, filter); draw();
@@ -76,7 +90,8 @@ export async function renderSpace(root, spaceId, params) {
     const sections = type.sections ? type.sections(shown) : [{ items: shown }];
     const out = [];
     for (const sec of sections) {
-      const cards = sec.items.map((it) => (type.card || defaultCard)(it, ctxFor(it)));
+      const card = view === 'compact' && type.compactCard ? type.compactCard : type.card || defaultCard;
+      const cards = sec.items.map((it) => card(it, ctxFor(it)));
       if (!sec.title) { out.push(...cards); continue; }
       if (!sec.items.length) continue;
       if (sec.collapsible) {
@@ -97,6 +112,12 @@ export async function renderSpace(root, spaceId, params) {
       const titles = [...new Set(items.map((i) => i.title))].sort();
       suggestions.replaceChildren(...titles.map((t) => h('option', { value: t })));
     }
+  }
+
+  function setView(nextView) {
+    view = nextView;
+    localStorage.setItem(viewKey, view);
+    draw();
   }
 
   // Quick add bar
@@ -128,7 +149,7 @@ export async function renderSpace(root, spaceId, params) {
     }),
     h('main', { class: 'page' },
       editable ? quick : h('p', { class: 'muted small' }, 'View only – shared with you.'),
-      chips, list));
+      type.compactCard ? viewControls : null, chips, list));
 
   // Live updates from other people / devices
   let timer;

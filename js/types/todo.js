@@ -51,4 +51,17 @@ export default {
       item.due_at ? h('span', { class: 'pill' + (overdue ? ' overdue' : '') }, '⏰ ' + fmtDate(item.due_at)) : null,
     ];
   },
+
+  compactCard(item, ctx) {
+    const status = ctx.type.statuses.find((s) => s.id === item.status) || ctx.type.statuses[0];
+    const done = item.status === ctx.type.doneStatus;
+    const overdue = isPast(item.due_at) && !done;
+    return h('article', { class: 'card compact-card compact-todo' + (done ? ' done' : ''), onclick: ctx.edit },
+      h('div', { class: 'compact-card-body' },
+        h('h3', { class: 'compact-title' }, item.title || 'Untitled'),
+        h('div', { class: 'compact-date' + (overdue ? ' overdue' : '') },
+          item.due_at ? 'Due: ' + fmtDate(item.due_at) : 'No deadline'),
+        item.remind_at ? h('div', { class: 'compact-date' }, '🔔 ' + fmtDate(item.remind_at)) : null,
+        h('span', { class: 'compact-status', style: `--c:${status.color}` }, status.label)));
+  },
 };
