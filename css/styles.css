@@ -144,6 +144,7 @@ details.section > summary::-webkit-details-marker { display: none; }
 .bill-list-main { overflow: hidden; }
 .bill-name, .bill-grid-name { overflow: hidden; color: var(--text); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .bill-kind, .bill-due { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.bill-account { overflow: hidden; color: var(--muted); font-size: 11px; line-height: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .bill-list-details { text-align: right; }
 .bill-price { color: var(--text); font-size: 13px; font-weight: 700; }
 .bill-due.overdue { color: var(--danger); }
@@ -151,13 +152,19 @@ details.section > summary::-webkit-details-marker { display: none; }
 .bill-paid-button { width: 30px; height: 30px; padding: 0; border: 2px solid var(--line); border-radius: 50%; background: none; color: #fff; font-size: 16px; cursor: pointer; }
 .bill-paid-button.on { border-color: #10b981; background: #10b981; }
 .bill-paid-button:disabled { opacity: .55; cursor: default; }
-.grid-list .month-section { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+.grid-list .month-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 10px; }
 .grid-list .month-divider { grid-column: 1 / -1; }
-.bill-grid-card { display: flex; min-width: 0; aspect-ratio: 1; flex-direction: column; align-items: stretch; justify-content: space-evenly; gap: 5px; overflow: hidden; padding: 10px 8px; text-align: center; }
+.bill-grid-card { display: flex; min-width: 0; aspect-ratio: 1 / 1.5; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; overflow: hidden; padding: 9px 7px; text-align: center; }
 .bill-grid-card.overdue { border: 1px solid var(--danger); }
-.bill-grid-name { font-size: 12px; }
-.bill-grid-card .bill-price { font-size: 12px; }
-.bill-grid-card .bill-due { font-size: 11px; }
+.bill-grid-card .bill-icon-grid { width: clamp(36px, 50%, 64px); flex: none; }
+.bill-grid-name { min-height: 15px; font-size: 12px; line-height: 15px; }
+.bill-grid-card .bill-price { flex: none; font-size: 12px; line-height: 15px; }
+.bill-grid-card .bill-due { flex: none; font-size: 11px; line-height: 14px; }
+.bill-grid-card .bill-account { flex: none; font-size: 10px; line-height: 13px; }
+.managed-select { display: flex; gap: 8px; }
+.managed-select > select { flex: 1; min-width: 0; }
+.managed-select-tools { display: flex; flex: none; gap: 4px; }
+.managed-select-tools .btn { min-width: 40px; padding: 6px 10px; }
 .logo-input-row { display: flex; align-items: center; gap: 10px; }
 .logo-input-row input { flex: 1; min-width: 0; }
 .logo-preview { display: flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; overflow: hidden; border-radius: 11px; background: var(--accent-2); color: var(--accent); font-size: 18px; font-weight: 700; }
