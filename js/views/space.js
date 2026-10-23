@@ -25,7 +25,11 @@ export async function renderSpace(root, spaceId, params) {
   ];
   let filter = sessionStorage.getItem('filter-' + spaceId) || type.defaultFilter || filters[0].id;
   const viewKey = 'space-view-' + spaceId;
-  let view = type.compactCard && localStorage.getItem(viewKey) === 'compact' ? 'compact' : 'list';
+  const supportsLayouts = type.layouts?.length > 1;
+  const legacyLayouts = !supportsLayouts && type.compactCard;
+  const layouts = supportsLayouts ? type.layouts : legacyLayouts ? ['list', 'compact'] : ['list'];
+  const storedView = localStorage.getItem(viewKey);
+  let view = layouts.includes(storedView) ? storedView : 'list';
   let items = [];
   const openSections = {};
 
@@ -39,15 +43,16 @@ export async function renderSpace(root, spaceId, params) {
   };
 
   async function patchItem(item, patch) {
-    if (!editable) return toast('View only');
+    if (!editable) { toast('View only'); return false; }
     Object.assign(item, patch);
     draw();
-    try { await updateItem(item.id, patch); } catch (e) { toast(errorText(e)); reload(); }
+    try { await updateItem(item.id, patch); return true; }
+    catch (e) { toast(errorText(e)); reload(); return false; }
   }
 
   // What every card can do (passed to type.card / defaultCard)
   const ctxFor = (item) => ({
-    space, type, item, canEdit: editable,
+    space, type, item, canEdit: editable, toast,
     edit: () => openItemForm(space, item, reload),
     update: (patch) => patchItem(item, patch),
     setStatus: (status) => patchItem(item, { status }),
@@ -67,15 +72,17 @@ export async function renderSpace(root, spaceId, params) {
   };
 
   function draw() {
-    list.className = 'list' + (view === 'compact' ? ' compact-list' : '');
-    if (type.compactCard) {
-      viewControls.replaceChildren(
-        h('button', { class: 'view-toggle' + (view === 'list' ? ' on' : ''), type: 'button',
-          'aria-label': 'List view', 'aria-pressed': view === 'list', title: 'List view',
-          onclick: () => setView('list') }, '☰'),
-        h('button', { class: 'view-toggle' + (view === 'compact' ? ' on' : ''), type: 'button',
-          'aria-label': 'Compact grid view', 'aria-pressed': view === 'compact', title: 'Compact grid view',
-          onclick: () => setView('compact') }, '▦'));
+    list.className = 'list'
+      + (legacyLayouts && view === 'compact' ? ' compact-list' : '')
+      + (supportsLayouts && view === 'grid' ? ' grid-list' : '');
+    if (supportsLayouts || legacyLayouts) {
+      const labels = supportsLayouts
+        ? { list: ['List view', '☰'], grid: ['Grid view', '▦'] }
+        : { list: ['List view', '☰'], compact: ['Compact grid view', '▦'] };
+      viewControls.replaceChildren(...layouts.map((layout) =>
+        h('button', { class: 'view-toggle' + (view === layout ? ' on' : ''), type: 'button',
+          'aria-label': labels[layout][0], 'aria-pressed': String(view === layout), title: labels[layout][0],
+          onclick: () => setView(layout) }, labels[layout][1])));
     } else viewControls.replaceChildren();
 
     chips.replaceChildren(...(type.hideFilters ? [] : filters.map((f) =>
@@ -87,10 +94,14 @@ export async function renderSpace(root, spaceId, params) {
     const shown = type.hideFilters ? [...items] : items.filter(active.test);
     if (type.sort) shown.sort(type.sort);
 
-    const sections = type.sections ? type.sections(shown) : [{ items: shown }];
+    const sections = view === 'grid' && type.gridSections
+      ? type.gridSections(shown)
+      : type.sections ? type.sections(shown) : [{ items: shown }];
     const out = [];
     for (const sec of sections) {
-      const card = view === 'compact' && type.compactCard ? type.compactCard : type.card || defaultCard;
+      const card = view === 'grid' && type.gridCard
+        ? type.gridCard
+        : view === 'compact' && type.compactCard ? type.compactCard : type.card || defaultCard;
       const cards = sec.items.map((it) => card(it, ctxFor(it)));
       if (!sec.title) { out.push(...cards); continue; }
       if (!sec.items.length) continue;
@@ -137,6 +148,9 @@ export async function renderSpace(root, spaceId, params) {
       onclick: () => openItemForm(space, null, reload) }, '＋'));
 
   const members = space.space_members?.length || 1;
+  const filterAndView = supportsLayouts
+    ? h('div', { class: 'filter-bar' }, chips, viewControls)
+    : [legacyLayouts ? viewControls : null, chips];
   root.replaceChildren(
     header({
       left: backLink(),
@@ -149,7 +163,7 @@ export async function renderSpace(root, spaceId, params) {
     }),
     h('main', { class: 'page' },
       editable ? quick : h('p', { class: 'muted small' }, 'View only – shared with you.'),
-      type.compactCard ? viewControls : null, chips, list));
+      filterAndView, list));
 
   // Live updates from other people / devices
   let timer;
