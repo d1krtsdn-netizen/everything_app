@@ -67,16 +67,71 @@ export function openItemForm(space, item, onSaved) {
 
 function makeControl(f, value, controls, type) {
   let input;
+  let selectTools = null;
   switch (f.type) {
     case 'textarea':
       input = h('textarea', { rows: '3', placeholder: f.placeholder || '' });
       input.value = value ?? '';
       break;
     case 'select':
-      input = h('select', null, f.options.map((o) => {
-        const v = o.value ?? o;
-        return h('option', { value: v, selected: v === (value ?? f.default) }, o.label ?? o);
-      }));
+      input = h('select');
+      if (f.manageOptions) {
+        const { storageKey, options } = f.manageOptions;
+        const savedOptions = localStorage.getItem(storageKey);
+        let choices = [...options];
+        if (savedOptions) {
+          try {
+            const parsed = JSON.parse(savedOptions);
+            if (!Array.isArray(parsed) || parsed.some((option) => typeof option !== 'string')) {
+              throw new Error('Saved options are invalid');
+            }
+            choices = parsed;
+          } catch (error) {
+            toast(`Could not load saved ${f.label.toLowerCase()} options: ${errorText(error)}`);
+          }
+        }
+        const initialValue = value ?? f.default ?? '';
+        const sortChoices = () => choices.sort((a, b) => a.localeCompare(b, 'en-GB', { sensitivity: 'base' }));
+        const renderChoices = (selected = input.value || initialValue) => {
+          const available = sortChoices();
+          if (selected && !available.includes(selected)) available.push(selected);
+          input.replaceChildren(
+            h('option', { value: '', selected: !selected }, f.placeholder || 'Select an option'),
+            ...available.map((option) => h('option', {
+              value: option, selected: option === selected,
+            }, choices.includes(option) ? option : `${option} (removed from list)`)));
+        };
+        renderChoices(initialValue);
+        const addOption = h('button', { type: 'button', class: 'btn small', 'aria-label': `Add ${f.label.toLowerCase()}`,
+          onclick: () => {
+            const option = window.prompt(`Add ${f.label.toLowerCase()}`);
+            if (!option?.trim()) return;
+            const next = option.trim();
+            if (choices.some((choice) => choice.toLowerCase() === next.toLowerCase())) {
+              return toast('That option is already in the list');
+            }
+            choices.push(next);
+            try { localStorage.setItem(storageKey, JSON.stringify(sortChoices())); }
+            catch (error) { toast(`Could not save ${f.label.toLowerCase()} options: ${errorText(error)}`); }
+            renderChoices(next);
+          } }, '＋');
+        const removeOption = h('button', { type: 'button', class: 'btn small', 'aria-label': `Remove selected ${f.label.toLowerCase()}`,
+          onclick: () => {
+            const selected = input.value;
+            if (!selected || !choices.includes(selected)) return toast('Select an option to remove');
+            if (!window.confirm(`Remove "${selected}" from the ${f.label.toLowerCase()} list?`)) return;
+            choices = choices.filter((choice) => choice !== selected);
+            try { localStorage.setItem(storageKey, JSON.stringify(sortChoices())); }
+            catch (error) { toast(`Could not save ${f.label.toLowerCase()} options: ${errorText(error)}`); }
+            renderChoices('');
+          } }, '−');
+        selectTools = h('div', { class: 'managed-select-tools' }, addOption, removeOption);
+      } else {
+        input.replaceChildren(...f.options.map((o) => {
+          const v = o.value ?? o;
+          return h('option', { value: v, selected: v === (value ?? f.default) }, o.label ?? o);
+        }));
+      }
       break;
     case 'datetime':
       input = h('input', { type: 'datetime-local', value: toLocalInput(value) });
@@ -106,6 +161,7 @@ function makeControl(f, value, controls, type) {
 
   let el = input;
   let refreshPreview = () => {};
+  if (selectTools) el = h('div', { class: 'managed-select' }, input, selectTools);
 
   // "Fetch details" button next to a link field (types with fromLink)
   if (f.importButton && type.fromLink) {

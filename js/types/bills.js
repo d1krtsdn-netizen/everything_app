@@ -7,6 +7,10 @@ const CATEGORIES = [
   'Insurance', 'Fitness', 'Council tax', 'Other',
 ];
 const FREQUENCIES = ['One-off', 'Weekly', 'Monthly', 'Yearly'];
+const PAYMENT_ACCOUNTS = [
+  'Amex (Blue)', 'Amex (Gold)', 'Barclays (Deso)', 'Barclays (Monia)',
+  'Barclays (Shared)', 'BoursBank',
+];
 
 const formatPrice = (value) => value == null || value === ''
   ? ''
@@ -112,6 +116,10 @@ export default {
     { key: 'price', label: 'Price (£)', type: 'number', step: '0.01', placeholder: 'e.g. 12.99' },
     { key: 'due_at', label: 'Due date', type: 'datetime' },
     { key: 'frequency', label: 'Repeats', type: 'select', options: FREQUENCIES, default: 'Monthly' },
+    {
+      key: 'account', label: 'Payment account', type: 'select', default: '',
+      manageOptions: { storageKey: 'bills-payment-accounts', options: PAYMENT_ACCOUNTS },
+    },
     { key: 'website', label: 'Website', type: 'url', placeholder: 'https://netflix.com' },
     { key: 'icon', label: 'Icon image link', type: 'url', logoButtons: true },
     reminderField('due_at'),
@@ -127,6 +135,11 @@ export default {
   defaultFilter: 'upcoming',
   sort: (a, b) => dateAsc(a.due_at, b.due_at),
   gridSections(items) {
+    const totals = new Map();
+    for (const item of items) {
+      const category = CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other';
+      totals.set(category, (totals.get(category) || 0) + (Number(item.data?.price) || 0));
+    }
     return CATEGORIES
       .map((category) => ({
         title: category,
@@ -134,7 +147,8 @@ export default {
         items: items.filter((item) =>
           (CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other') === category),
       }))
-      .filter((section) => section.items.length);
+      .filter((section) => section.items.length)
+      .sort((a, b) => totals.get(b.title) - totals.get(a.title) || CATEGORIES.indexOf(a.title) - CATEGORIES.indexOf(b.title));
   },
 
   async onQuickAdd(text, { create }) {
@@ -149,7 +163,8 @@ export default {
       billIcon(item, 'bill-icon-list'),
       h('div', { class: 'bill-list-main' },
         h('div', { class: 'bill-name' }, item.title || 'Untitled bill'),
-        h('div', { class: 'bill-kind' }, `${item.data?.category || 'Other'} · ${item.data?.frequency || 'Monthly'}`)),
+        h('div', { class: 'bill-kind' }, `${item.data?.category || 'Other'} · ${item.data?.frequency || 'Monthly'}`),
+        h('div', { class: 'bill-account' }, item.data?.account || 'No account selected')),
       h('div', { class: 'bill-list-details' },
         h('div', { class: 'bill-price' }, formatPrice(item.data?.price) || '—'),
         h('div', { class: 'bill-due' + (late ? ' overdue' : '') },
@@ -164,6 +179,7 @@ export default {
       h('div', { class: 'bill-grid-name' }, item.title || 'Untitled bill'),
       h('div', { class: 'bill-price' }, formatPrice(item.data?.price) || '—'),
       h('div', { class: 'bill-due' + (late ? ' overdue' : '') },
-        item.due_at ? shortDate(item.due_at) : 'No due date'));
+        item.due_at ? shortDate(item.due_at) : 'No due date'),
+      h('div', { class: 'bill-account' }, item.data?.account || 'No account'));
   },
 };
