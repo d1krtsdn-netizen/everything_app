@@ -93,6 +93,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .list { display: flex; flex-direction: column; gap: 10px; }
 .section { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .section-title, .section > summary { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 8px 4px 0; }
+.subsection { display: flex; flex-direction: column; gap: 8px; padding-left: 10px; }
+.subsection-title { margin: 2px 4px 0; color: var(--muted); font-size: 12px; font-weight: 600; }
 .month-section { gap: 10px; margin-top: 12px; }
 .month-divider { display: flex; align-items: center; gap: 12px; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 700; color: var(--text); }
 .month-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }

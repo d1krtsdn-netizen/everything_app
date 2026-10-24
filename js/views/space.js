@@ -99,6 +99,16 @@ export async function renderSpace(root, spaceId, params) {
       : type.sections ? type.sections(shown) : [{ items: shown }];
     const out = [];
     for (const sec of sections) {
+      if (sec.children) {
+        const childSections = sec.children.filter((child) => child.items.length);
+        if (!childSections.length) continue;
+        out.push(h('section', { class: 'section' },
+          h('h3', { class: 'section-title' }, sec.title),
+          childSections.map((child) => h('section', { class: 'subsection' },
+            h('h4', { class: 'subsection-title' }, child.title),
+            child.items.map((item) => (type.card || defaultCard)(item, ctxFor(item)))))));
+        continue;
+      }
       const card = view === 'grid' && type.gridCard
         ? type.gridCard
         : view === 'compact' && type.compactCard ? type.compactCard : type.card || defaultCard;
