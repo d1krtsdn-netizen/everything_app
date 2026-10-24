@@ -154,7 +154,7 @@ details.section > summary::-webkit-details-marker { display: none; }
 .bill-paid-button:disabled { opacity: .55; cursor: default; }
 .grid-list .month-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 10px; }
 .grid-list .month-divider { grid-column: 1 / -1; }
-.bill-grid-card { display: flex; min-width: 0; aspect-ratio: 1 / 1.5; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; overflow: hidden; padding: 9px 7px; text-align: center; }
+.bill-grid-card { display: flex; min-width: 0; height: auto; aspect-ratio: auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; overflow: hidden; padding: 9px 7px; text-align: center; }
 .bill-grid-card.overdue { border: 1px solid var(--danger); }
 .bill-grid-card .bill-icon-grid { width: clamp(36px, 50%, 64px); flex: none; }
 .bill-grid-name { min-height: 15px; font-size: 12px; line-height: 15px; }
