@@ -50,6 +50,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .emoji-input { width: 96px !important; }
 
 /* ===== Home ===== */
+.upcoming-panel { margin: 0 0 16px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.upcoming-heading { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 700; cursor: pointer; list-style: none; }
+.upcoming-heading::-webkit-details-marker { display: none; }
+.upcoming-heading::after { content: '⌄'; margin-left: auto; color: var(--muted); font-size: 18px; transition: transform .15s; }
+.upcoming-panel[open] .upcoming-heading::after { transform: rotate(180deg); }
+.upcoming-count { min-width: 22px; padding: 1px 7px; border-radius: 99px; background: var(--accent-2); color: var(--accent); font-size: 12px; text-align: center; }
+.upcoming-items { display: flex; flex-direction: column; padding: 0 10px 10px; }
+.upcoming-row { display: flex; min-width: 0; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
+.upcoming-link { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; padding: 10px 4px; color: var(--text); }
+.upcoming-icon { flex: none; font-size: 21px; }
+.upcoming-info { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.upcoming-title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-category, .upcoming-date { color: var(--muted); font-size: 12px; }
+.upcoming-category { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-date { flex: none; }
+.upcoming-dismiss { width: 34px; height: 34px; flex: none; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; }
+.upcoming-dismiss:hover { background: var(--bg); color: var(--text); }
 .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 8px; }
 .tile { background: var(--card); border: 0; border-radius: var(--radius); padding: 16px; text-align: left; color: var(--text);
   display: flex; flex-direction: column; gap: 4px; min-height: 124px; box-shadow: 0 1px 2px rgb(0 0 0 / .05); cursor: pointer; }
