@@ -17,7 +17,7 @@ create table if not exists public.profiles (
   created_at   timestamptz default now()
 );
 
--- A "space" is a category (Events, To-Do, To-Buy, or any future type)
+-- A "space" is a category (Events, Tasks, Shopping, or any future type)
 create table if not exists public.spaces (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,

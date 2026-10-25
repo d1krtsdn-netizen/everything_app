@@ -1,4 +1,4 @@
-// TO-DO – tasks with priority, deadline and status.
+// Tasks – tasks with priority, deadline and status.
 import { h, fmtDate, isPast, dateAsc, monthSections } from '../lib/dom.js';
 import { reminderField } from './fields.js';
 
@@ -11,7 +11,7 @@ const rank = (i) => PRIORITY[i.data?.priority || 'medium']?.rank ?? 1;
 
 export default {
   id: 'todo',
-  label: 'To-Do',
+  label: 'Tasks',
   icon: 'icons/list_icons/List_Checklist.svg',
   itemLabel: 'task',
   description: 'Tasks with priority, deadline and status.',

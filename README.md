@@ -72,7 +72,7 @@ You need: a Supabase account, a GitHub account, a Vercel account (all free), you
 19. On iPhone **Safari** open your Vercel address → **Create an account** → confirm via the email link → sign in.
 20. Tap **Share** → **Add to Home Screen** → **Add**.
 21. Open **Everything from the Home Screen icon** and sign in again (the Home Screen app has its own login).
-    You'll see Events, To-Do and To-Buy.
+    You'll see Events, Tasks and Shopping.
 22. ⚙︎ **Settings** → **Turn on notifications** → **Allow** → **Send test notification**. You should get a notification.
 
 ## Part 8 – Share button (iOS Shortcut)

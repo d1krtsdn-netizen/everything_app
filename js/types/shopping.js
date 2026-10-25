@@ -1,4 +1,4 @@
-// TO-BUY – shopping list grouped by category; bought items can be re-added with one tap.
+// SHOPPING – shopping list grouped by category; bought items can be re-added with one tap.
 import { h } from '../lib/dom.js';
 import { checkCircle, linkOut, reminderBadge } from '../views/card.js';
 
@@ -73,7 +73,7 @@ const emojiOf = (item) => {
 
 export default {
   id: 'shopping',
-  label: 'To-Buy',
+  label: 'Shopping',
   icon: 'icons/list_icons/Shopping_Bag_02.svg',
   itemLabel: 'item',
   description: 'Things to buy, with links. Tick when bought, re-add with one tap.',
