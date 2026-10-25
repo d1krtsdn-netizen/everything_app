@@ -49,6 +49,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .form-actions { display: flex; gap: 8px; }
 .emoji-input { width: 96px !important; }
+.category-icon-fields { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: end; gap: 8px; }
+.category-icon-field { min-width: 0; }
+.category-icon-field select { min-width: 0; }
+.category-emoji-field { flex: none; }
+.category-emoji-field .emoji-input { width: 100% !important; }
 
 /* ===== Home ===== */
 .upcoming-panel { margin: 0 0 16px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }

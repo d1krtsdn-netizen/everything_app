@@ -102,7 +102,12 @@ function openNewSpace() {
   let chosen = 'list';
   const name = h('input', { placeholder: 'e.g. Gift ideas', required: true });
   const icon = iconOptions(getType(chosen).icon);
-  const emoji = h('input', { placeholder: '🎁', maxlength: '4', class: 'emoji-input' });
+  const emoji = h('input', { placeholder: '📝', maxlength: '4', class: 'emoji-input' });
+  const iconField = field('Icon', icon);
+  const emojiField = field('Or use your own emoji', emoji);
+  iconField.classList.add('category-icon-field');
+  emojiField.classList.add('category-emoji-field');
+  const iconFields = h('div', { class: 'category-icon-fields' }, iconField, emojiField);
   const options = h('div', { class: 'type-options' }, typeList().map((t) =>
     h('label', { class: 'type-opt' },
       h('input', { type: 'radio', name: 'type', value: t.id, checked: t.id === chosen, onchange: () => {
@@ -125,7 +130,8 @@ function openNewSpace() {
         location.hash = `#/space/${s.id}`;
       } catch (err) { toast(errorText(err)); }
     });
-  } }, field('Name', name), field('Icon', icon), field('Or use your own emoji', emoji),
+  } }, field('Name', name), iconFields,
   h('span', { class: 'label' }, 'Type'), options, save);
   const close = openSheet('New category', form);
+  emojiField.style.width = `${emojiField.querySelector('.label').getBoundingClientRect().width}px`;
 }
