@@ -8,7 +8,9 @@ export function header({ title, left, right }) {
     h('div', { class: 'tb-side right' }, right));
 }
 
-export const backLink = (href = '#/') => h('a', { class: 'icon-btn', href, 'aria-label': 'Back' }, '‹');
+export const backLink = (href = '#/') => h('a', { class: 'icon-btn', href, 'aria-label': 'Back' }, 
+  h('img', { class: 'share-icon-image', src: 'icons/Back_Chevron.svg', alt: '' }),
+);
 
 // Opens a bottom sheet. Returns a close() function.
 export function openSheet(title, body) {

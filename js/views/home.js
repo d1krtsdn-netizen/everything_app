@@ -23,7 +23,9 @@ export function renderHome(root) {
 
   const upcoming = h('div', { class: 'upcoming' });
   root.replaceChildren(
-    header({ title: 'Everything', right: h('a', { class: 'icon-btn', href: '#/settings', 'aria-label': 'Settings' }, '⚙︎') }),
+    header({ title: 'Everything', right: h('a', { class: 'icon-btn', href: '#/settings', 'aria-label': 'Settings' }, 
+h('img', { src: 'icons/Settings_Icon.svg', alt: '', class: 'settings-icon' })
+    ) }),
     h('main', { class: 'page' }, upcoming, h('div', { class: 'tiles' }, tiles)));
 
   loadUpcoming(upcoming).catch((error) => {
