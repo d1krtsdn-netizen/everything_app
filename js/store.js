@@ -31,6 +31,16 @@ export const createItem = async (item) => ok(await supabase.from('items').insert
 export const updateItem = async (id, patch) => ok(await supabase.from('items').update(patch).eq('id', id));
 export const deleteItem = async (id) => ok(await supabase.from('items').delete().eq('id', id));
 
+// ---------- payment accounts (private to members of a bill space) ----------
+export const listPaymentAccounts = async (spaceId) =>
+  ok(await supabase.from('space_payment_accounts').select('*').eq('space_id', spaceId).order('account').order('owner'));
+export const createPaymentAccount = async (spaceId, { account, owner }) =>
+  ok(await supabase.from('space_payment_accounts')
+    .insert({ space_id: spaceId, account: account.trim(), owner: owner.trim(), created_by: state.user.id })
+    .select().single());
+export const deletePaymentAccount = async (spaceId, id) =>
+  ok(await supabase.from('space_payment_accounts').delete().eq('space_id', spaceId).eq('id', id));
+
 // Live updates: calls onChange whenever an item in this space changes (by anyone).
 export function watchItems(spaceId, onChange) {
   const ch = supabase

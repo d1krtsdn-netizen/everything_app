@@ -7,10 +7,6 @@ const CATEGORIES = [
   'Insurance', 'Fitness', 'Council tax', 'Other',
 ];
 const FREQUENCIES = ['One-off', 'Weekly', 'Monthly', 'Yearly'];
-const PAYMENT_ACCOUNTS = [
-  'Amex (Blue)', 'Amex (Gold)', 'Barclays (Deso)', 'Barclays (Monia)',
-  'Barclays (Shared)', 'BoursBank',
-];
 
 const formatPrice = (value) => value == null || value === ''
   ? ''
@@ -152,7 +148,7 @@ export default {
     { key: 'frequency', label: 'Repeats', type: 'select', options: FREQUENCIES, default: 'Monthly' },
     {
       key: 'account', label: 'Payment account', type: 'select', default: '',
-      manageOptions: { storageKey: 'bills-payment-accounts', options: PAYMENT_ACCOUNTS },
+      paymentAccounts: true,
     },
     { key: 'website', label: 'Website', type: 'url', placeholder: 'https://netflix.com' },
     { key: 'icon', label: 'Icon image link', type: 'url', logoButtons: true },

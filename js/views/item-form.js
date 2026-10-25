@@ -4,20 +4,28 @@ import { openSheet, field, busy, toast, errorText } from '../lib/ui.js';
 import { state, canEdit } from '../state.js';
 import { getType } from '../types/index.js';
 import { defaults, valueOf, toRow } from '../types/fields.js';
-import { createItem, updateItem, deleteItem, parseLink } from '../store.js';
+import {
+  createItem, updateItem, deleteItem, parseLink,
+  listPaymentAccounts, createPaymentAccount, deletePaymentAccount,
+} from '../store.js';
 import { pushStatus } from '../push.js';
 
-export function openItemForm(space, item, onSaved) {
+export async function openItemForm(space, item, onSaved) {
   const type = getType(space.type);
   const isNew = !item;
   const editable = canEdit(space);
+  let paymentAccounts = [];
+  if (type.id === 'bills') {
+    try { paymentAccounts = await listPaymentAccounts(space.id); }
+    catch (error) { toast(`Could not load payment accounts: ${errorText(error)}`); return; }
+  }
   const start = isNew ? defaults(type) : {};
   const controls = {};
   const rows = [];
   let statusSel;
 
   for (const f of type.fields) {
-    const c = makeControl(f, isNew ? start[f.key] : valueOf(item, f.key), controls, type);
+    const c = makeControl(f, isNew ? start[f.key] : valueOf(item, f.key), controls, type, space, paymentAccounts, editable);
     controls[f.key] = c;
     rows.push(field(f.label, c.el));
     if (f.key === 'title' && type.statuses?.length) rows.push(statusRow());
@@ -65,7 +73,7 @@ export function openItemForm(space, item, onSaved) {
   const close = openSheet(title.charAt(0).toUpperCase() + title.slice(1), form);
 }
 
-function makeControl(f, value, controls, type) {
+function makeControl(f, value, controls, type, space, paymentAccounts, editable) {
   let input;
   let selectTools = null;
   switch (f.type) {
@@ -75,7 +83,56 @@ function makeControl(f, value, controls, type) {
       break;
     case 'select':
       input = h('select');
-      if (f.manageOptions) {
+      if (f.paymentAccounts) {
+        const displayName = (account) => `${account.account} (${account.owner})`;
+        const renderAccounts = (selected = input.value || value || '') => {
+          input.replaceChildren(
+            h('option', { value: '', selected: !selected }, f.placeholder || 'Select an account'),
+            ...paymentAccounts.map((account) => h('option', {
+              value: displayName(account),
+              selected: displayName(account) === selected,
+              'data-account-id': account.id,
+            }, displayName(account))),
+            selected && !paymentAccounts.some((account) => displayName(account) === selected)
+              ? h('option', { value: selected, selected: true }, selected)
+              : null);
+        };
+        renderAccounts(value ?? f.default ?? '');
+
+        const addAccount = h('button', { type: 'button', class: 'btn small', 'aria-label': 'Add payment account',
+          onclick: () => {
+            const accountInput = h('input', { required: true, placeholder: 'e.g. Barclays or Amex' });
+            const ownerInput = h('input', { required: true, placeholder: 'e.g. Your name or "Shared"' });
+            const addButton = h('button', { class: 'btn primary wide', type: 'submit' }, 'Add account');
+            const accountForm = h('form', { class: 'form', onsubmit: async (event) => {
+              event.preventDefault();
+              await busy(addButton, async () => {
+                try {
+                  const account = await createPaymentAccount(space.id, {
+                    account: accountInput.value,
+                    owner: ownerInput.value,
+                  });
+                  paymentAccounts.push(account);
+                  renderAccounts(displayName(account));
+                  closeAccountSheet();
+                } catch (error) { toast(`Could not add payment account: ${errorText(error)}`); }
+              });
+            } }, field('Account', accountInput), field('Owner', ownerInput), addButton);
+            const closeAccountSheet = openSheet('Add payment account', accountForm);
+          } }, '＋');
+        const removeAccount = h('button', { type: 'button', class: 'btn small', 'aria-label': 'Remove payment account',
+          onclick: async () => {
+            const account = paymentAccounts.find((entry) => displayName(entry) === input.value);
+            if (!account) return toast('Select an account from the list to remove');
+            if (!window.confirm(`Remove "${displayName(account)}" from this list?`)) return;
+            try {
+              await deletePaymentAccount(space.id, account.id);
+              paymentAccounts = paymentAccounts.filter((entry) => entry.id !== account.id);
+              renderAccounts('');
+            } catch (error) { toast(`Could not remove payment account: ${errorText(error)}`); }
+          } }, '−');
+        if (editable) selectTools = h('div', { class: 'managed-select-tools' }, addAccount, removeAccount);
+      } else if (f.manageOptions) {
         const { storageKey, options } = f.manageOptions;
         const savedOptions = localStorage.getItem(storageKey);
         let choices = [...options];
