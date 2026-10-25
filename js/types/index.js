@@ -12,7 +12,7 @@ export const typeList = () => Object.values(TYPES);
 
 // Created automatically the first time a user signs in
 export const STARTER_SPACES = [
-  { name: 'Events', type: 'events', icon: '🎟️' },
-  { name: 'To-Do', type: 'todo', icon: '✅' },
-  { name: 'To-Buy', type: 'shopping', icon: '🛒' },
+  { name: 'Events', type: 'events', icon: 'icons/list_icons/Ticket_Voucher.svg' },
+  { name: 'To-Do', type: 'todo', icon: 'icons/list_icons/List_Checklist.svg' },
+  { name: 'To-Buy', type: 'shopping', icon: 'icons/list_icons/Shopping_Bag_02.svg' },
 ];

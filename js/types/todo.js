@@ -12,7 +12,7 @@ const rank = (i) => PRIORITY[i.data?.priority || 'medium']?.rank ?? 1;
 export default {
   id: 'todo',
   label: 'To-Do',
-  icon: '✅',
+  icon: 'icons/list_icons/List_Checklist.svg',
   itemLabel: 'task',
   description: 'Tasks with priority, deadline and status.',
   statuses: [

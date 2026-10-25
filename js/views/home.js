@@ -3,6 +3,7 @@ import { h, fmtDate } from '../lib/dom.js';
 import { header, openSheet, field, busy, toast, errorText } from '../lib/ui.js';
 import { state, myRole } from '../state.js';
 import { getType, typeList } from '../types/index.js';
+import { iconContent, iconOptions } from '../lib/icons.js';
 import { createSpace, loadSpaces, listItems } from '../store.js';
 
 export function renderHome(root) {
@@ -12,7 +13,7 @@ export function renderHome(root) {
     if ((s.space_members?.length || 1) > 1) tags.push('Shared');
     if (myRole(s) === 'viewer') tags.push('View only');
     return h('a', { class: 'tile', href: `#/space/${s.id}` },
-      h('div', { class: 'tile-icon' }, s.icon || t.icon),
+      h('div', { class: 'tile-icon' }, iconContent(s.icon || t.icon, 'category-icon-image')),
       h('div', { class: 'tile-name' }, s.name),
       h('div', { class: 'tile-sub' }, tags.join(' · ')));
   });
@@ -75,7 +76,7 @@ async function loadUpcoming(upcoming) {
     h('div', { class: 'upcoming-items' }, visible.map(({ space, type, item, date }) =>
       h('div', { class: 'upcoming-row' },
         h('a', { class: 'upcoming-link', href: `#/space/${space.id}?item=${encodeURIComponent(item.id)}` },
-          h('span', { class: 'upcoming-icon' }, space.icon || type.icon),
+          h('span', { class: 'upcoming-icon' }, iconContent(space.icon || type.icon, 'category-icon-image')),
           h('span', { class: 'upcoming-info' },
             h('span', { class: 'upcoming-title' }, item.title || `Untitled ${type.itemLabel}`),
             h('span', { class: 'upcoming-category' }, space.name)),
@@ -97,24 +98,31 @@ async function loadUpcoming(upcoming) {
 function openNewSpace() {
   let chosen = 'list';
   const name = h('input', { placeholder: 'e.g. Gift ideas', required: true });
-  const icon = h('input', { placeholder: '🎁', maxlength: '4', class: 'emoji-input' });
+  const icon = iconOptions(getType(chosen).icon);
+  const emoji = h('input', { placeholder: '🎁', maxlength: '4', class: 'emoji-input' });
   const options = h('div', { class: 'type-options' }, typeList().map((t) =>
     h('label', { class: 'type-opt' },
-      h('input', { type: 'radio', name: 'type', value: t.id, checked: t.id === chosen, onchange: () => { chosen = t.id; } }),
-      h('span', { class: 'type-ico' }, t.icon),
+      h('input', { type: 'radio', name: 'type', value: t.id, checked: t.id === chosen, onchange: () => {
+        chosen = t.id;
+        icon.value = t.icon;
+        emoji.value = '';
+      } }),
+      h('span', { class: 'type-ico' }, iconContent(t.icon, 'category-icon-image')),
       h('span', null, h('b', null, t.label), h('small', null, t.description)))));
+  icon.addEventListener('change', () => { emoji.value = ''; });
   const save = h('button', { class: 'btn primary wide', type: 'submit' }, 'Create');
 
   const form = h('form', { class: 'form', onsubmit: async (e) => {
     e.preventDefault();
     await busy(save, async () => {
       try {
-        const s = await createSpace({ name: name.value.trim(), type: chosen, icon: icon.value.trim() || getType(chosen).icon });
+        const s = await createSpace({ name: name.value.trim(), type: chosen, icon: emoji.value.trim() || icon.value });
         await loadSpaces();
         close();
         location.hash = `#/space/${s.id}`;
       } catch (err) { toast(errorText(err)); }
     });
-  } }, field('Name', name), field('Icon (emoji)', icon), h('span', { class: 'label' }, 'Type'), options, save);
+  } }, field('Name', name), field('Icon', icon), field('Or use your own emoji', emoji),
+  h('span', { class: 'label' }, 'Type'), options, save);
   const close = openSheet('New category', form);
 }

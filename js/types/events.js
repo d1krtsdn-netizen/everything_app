@@ -14,7 +14,7 @@ const fromLink = (info) => ({
 export default {
   id: 'events',
   label: 'Events',
-  icon: '🎟️',
+  icon: 'icons/list_icons/Ticket_Voucher.svg',
   itemLabel: 'event',
   description: 'Events from links you share. Shows site, image, price and location.',
   statuses: [

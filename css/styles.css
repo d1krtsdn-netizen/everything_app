@@ -60,6 +60,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .upcoming-row { display: flex; min-width: 0; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
 .upcoming-link { display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px; padding: 10px 4px; color: var(--text); }
 .upcoming-icon { flex: none; font-size: 21px; }
+.upcoming-icon img { display: block; width: 21px; height: 21px; object-fit: contain; }
+.space-header-title { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.space-header-title img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 .upcoming-info { display: flex; flex: 1; min-width: 0; flex-direction: column; }
 .upcoming-title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .upcoming-category, .upcoming-date { color: var(--muted); font-size: 12px; }
@@ -71,6 +74,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tile { background: var(--card); border: 0; border-radius: var(--radius); padding: 16px; text-align: left; color: var(--text);
   display: flex; flex-direction: column; gap: 4px; min-height: 124px; box-shadow: 0 1px 2px rgb(0 0 0 / .05); cursor: pointer; }
 .tile-icon { font-size: 30px; }
+.tile-icon img { width: 32px; height: 32px; object-fit: contain; }
 .tile-name { font-weight: 600; font-size: 17px; margin-top: auto; }
 .tile-sub { color: var(--muted); font-size: 13px; }
 .tile.add { border: 2px dashed var(--line); background: transparent; box-shadow: none; color: var(--muted); }
@@ -209,6 +213,7 @@ details.section > summary::-webkit-details-marker { display: none; }
 .type-opt:has(input:checked) { border-color: var(--accent); }
 .type-opt small { display: block; color: var(--muted); }
 .type-ico { font-size: 24px; }
+.type-ico img { width: 24px; height: 24px; object-fit: contain; }
 .person { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .person select { width: auto; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-2); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }

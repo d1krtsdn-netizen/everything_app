@@ -3,6 +3,7 @@ import { h } from '../lib/dom.js';
 import { header, backLink, openSheet, field, busy, toast, errorText } from '../lib/ui.js';
 import { state, myRole, canEdit } from '../state.js';
 import { getType } from '../types/index.js';
+import { iconContent, iconOptions } from '../lib/icons.js';
 import { newItem } from '../types/fields.js';
 import { defaultCard } from './card.js';
 import { openItemForm } from './item-form.js';
@@ -167,7 +168,8 @@ export async function renderSpace(root, spaceId, params) {
   root.replaceChildren(
     header({
       left: backLink(),
-      title: `${space.icon || type.icon} ${space.name}`,
+      title: h('span', { class: 'space-header-title' },
+        iconContent(space.icon || type.icon, 'category-icon-image'), space.name),
       right: [
         h('button', { class: 'icon-btn', 'aria-label': 'Share', onclick: () => openSharing(space) },
           '👥', members > 1 ? h('span', { class: 'badge' }, members) : null),
@@ -195,7 +197,15 @@ export async function renderSpace(root, spaceId, params) {
 function openSpaceMenu(space) {
   const owner = myRole(space) === 'owner';
   const name = h('input', { value: space.name });
-  const icon = h('input', { value: space.icon || '', class: 'emoji-input', maxlength: '4' });
+  const isLibraryIcon = (icon) => icon?.startsWith('icons/list_icons/');
+  const icon = iconOptions(isLibraryIcon(space.icon) ? space.icon : '', !isLibraryIcon(space.icon));
+  const emoji = h('input', {
+    value: isLibraryIcon(space.icon) ? '' : space.icon || '',
+    placeholder: '🎁',
+    maxlength: '4',
+    class: 'emoji-input',
+  });
+  icon.addEventListener('change', () => { emoji.value = ''; });
   const save = h('button', { class: 'btn primary wide', type: 'submit' }, 'Save');
 
   const body = h('div', { class: 'stack' },
@@ -203,13 +213,16 @@ function openSpaceMenu(space) {
       e.preventDefault();
       await busy(save, async () => {
         try {
-          await updateSpace(space.id, { name: name.value.trim() || space.name, icon: icon.value.trim() || null });
+          await updateSpace(space.id, {
+            name: name.value.trim() || space.name,
+            icon: emoji.value.trim() || icon.value || getType(space.type).icon,
+          });
           await loadSpaces();
           close();
           window.dispatchEvent(new HashChangeEvent('hashchange'));
         } catch (err) { toast(errorText(err)); }
       });
-    } }, field('Name', name), field('Icon (emoji)', icon), save) : null,
+    } }, field('Name', name), field('Icon', icon), field('Or use your own emoji', emoji), save) : null,
     h('div', { class: 'danger-zone' }, owner
       ? h('button', { class: 'btn danger wide', onclick: async () => {
         if (!confirm(`Delete "${space.name}" and everything in it? It will also disappear for anyone you shared it with.`)) return;

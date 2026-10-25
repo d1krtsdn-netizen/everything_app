@@ -74,7 +74,7 @@ const emojiOf = (item) => {
 export default {
   id: 'shopping',
   label: 'To-Buy',
-  icon: '🛒',
+  icon: 'icons/list_icons/Shopping_Bag_02.svg',
   itemLabel: 'item',
   description: 'Things to buy, with links. Tick when bought, re-add with one tap.',
   statuses: [

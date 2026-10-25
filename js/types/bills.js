@@ -125,7 +125,7 @@ function statusButton(item, ctx) {
 export default {
   id: 'bills',
   label: 'Bills & Subscriptions',
-  icon: '💳',
+  icon: 'icons/list_icons/Credit_Card_01.svg',
   itemLabel: 'bill',
   description: 'Track bills and subscriptions, prices and recurring due dates.',
   layouts: ['list', 'grid'],

@@ -6,7 +6,7 @@ import { reminderField } from './fields.js';
 export default {
   id: 'list',
   label: 'Simple list',
-  icon: '📝',
+  icon: 'icons/list_icons/Note_Edit.svg',
   itemLabel: 'item',
   description: 'A flexible list for anything else – ideas, gifts, films, places…',
   statuses: [
