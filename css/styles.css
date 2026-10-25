@@ -29,6 +29,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ===== Buttons & inputs ===== */
 .icon-btn { position: relative; border: 0; background: none; font-size: 22px; min-width: 40px; height: 40px; border-radius: 12px;
   display: inline-flex; align-items: center; justify-content: center; color: var(--accent); cursor: pointer; }
+.share-icon-image { width: 24px; height: 24px; }
 .badge { position: absolute; top: 2px; right: 0; background: var(--accent); color: #fff; font-size: 10px; border-radius: 99px; padding: 1px 5px; }
 .btn { border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; background: var(--card); font-weight: 600; cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }

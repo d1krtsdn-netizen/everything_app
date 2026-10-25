@@ -172,7 +172,8 @@ export async function renderSpace(root, spaceId, params) {
         iconContent(space.icon || type.icon, 'category-icon-image'), space.name),
       right: [
         h('button', { class: 'icon-btn', 'aria-label': 'Share', onclick: () => openSharing(space) },
-          '👥', members > 1 ? h('span', { class: 'badge' }, members) : null),
+          h('img', { class: 'share-icon-image', src: 'icons/User_Sharing.svg', alt: '' }),
+          members > 1 ? h('span', { class: 'badge' }, members) : null),
         h('button', { class: 'icon-btn', 'aria-label': 'Category options', onclick: () => openSpaceMenu(space) }, '⋯'),
       ],
     }),
