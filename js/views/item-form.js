@@ -47,13 +47,22 @@ export async function openItemForm(space, item, onSaved) {
     assignee.value = '';
   }
 
-  for (const f of type.fields) {
+  const notesField = type.fields.find((f) => f.key === 'notes');
+  const reminder = type.fields.find((f) => f.key === 'remind_at');
+  const otherFields = type.fields.filter((f) => f.key !== 'notes' && f.key !== 'remind_at');
+
+  for (const f of otherFields) {
     const c = makeControl(f, isNew ? start[f.key] : valueOf(item, f.key), controls, type, space, paymentAccounts, editable);
     controls[f.key] = c;
     rows.push(field(f.label, c.el));
     if (f.key === 'title' && type.statuses?.length) rows.push(statusRow());
   }
   rows.push(field('Assignee', assignee));
+  for (const f of [reminder, notesField].filter(Boolean)) {
+    const c = makeControl(f, isNew ? start[f.key] : valueOf(item, f.key), controls, type, space, paymentAccounts, editable);
+    controls[f.key] = c;
+    rows.push(field(f.label, c.el));
+  }
 
   function statusRow() {
     statusSel = h('select', null, type.statuses.map((s) =>
