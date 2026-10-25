@@ -66,10 +66,18 @@ export async function renderSpace(root, spaceId, params) {
   });
 
   // What quick-add handlers can do (passed to type.onQuickAdd)
+  const lastAssigneeKey = `last-assignee-${state.user.id}-${space.id}`;
   const helpers = {
     space, type, toast, parseLink,
     get items() { return items; },
-    create: (values) => createItem(newItem(space, type, values)),
+    create: (values) => {
+      const item = newItem(space, type, values);
+      const assigneeId = localStorage.getItem(lastAssigneeKey);
+      if (assigneeId && space.space_members?.some((member) => member.user_id === assigneeId)) {
+        item.data.assignee_id = assigneeId;
+      }
+      return createItem(item);
+    },
     update: (id, patch) => updateItem(id, patch),
   };
 

@@ -6,7 +6,7 @@ import { getType } from '../types/index.js';
 import { defaults, valueOf, toRow } from '../types/fields.js';
 import {
   createItem, updateItem, deleteItem, parseLink,
-  listPaymentAccounts, createPaymentAccount, deletePaymentAccount,
+  listMembers, listPaymentAccounts, createPaymentAccount, deletePaymentAccount,
 } from '../store.js';
 import { pushStatus } from '../push.js';
 
@@ -14,6 +14,10 @@ export async function openItemForm(space, item, onSaved) {
   const type = getType(space.type);
   const isNew = !item;
   const editable = canEdit(space);
+  let members;
+  try { members = await listMembers(space.id); }
+  catch (error) { toast(`Could not load list members: ${errorText(error)}`); return; }
+
   let paymentAccounts = [];
   if (type.id === 'bills') {
     try { paymentAccounts = await listPaymentAccounts(space.id); }
@@ -23,6 +27,25 @@ export async function openItemForm(space, item, onSaved) {
   const controls = {};
   const rows = [];
   let statusSel;
+  const lastAssigneeKey = `last-assignee-${state.user.id}-${space.id}`;
+  const rememberedAssignee = localStorage.getItem(lastAssigneeKey);
+  const currentAssignee = item?.data?.assignee_id || (isNew ? rememberedAssignee : '');
+  const assignee = h('select', null,
+    h('option', { value: '' }, 'Unassigned'),
+    ...members.map((member) => {
+      const label = member.profiles?.display_name || member.profiles?.email || 'Someone';
+      const role = { owner: 'Owner', editor: 'Editor', viewer: 'View only' }[member.role] || member.role;
+      return h('option', {
+        value: member.user_id,
+        selected: member.user_id === currentAssignee,
+      }, `${label}${member.user_id === state.user.id ? ' (you)' : ''} · ${role}`);
+    }),
+    currentAssignee && !members.some((member) => member.user_id === currentAssignee)
+      ? h('option', { value: currentAssignee, selected: true }, 'Former member (no longer has access)')
+      : null);
+  if (isNew && rememberedAssignee && !members.some((member) => member.user_id === rememberedAssignee)) {
+    assignee.value = '';
+  }
 
   for (const f of type.fields) {
     const c = makeControl(f, isNew ? start[f.key] : valueOf(item, f.key), controls, type, space, paymentAccounts, editable);
@@ -30,6 +53,7 @@ export async function openItemForm(space, item, onSaved) {
     rows.push(field(f.label, c.el));
     if (f.key === 'title' && type.statuses?.length) rows.push(statusRow());
   }
+  rows.push(field('Assignee', assignee));
 
   function statusRow() {
     statusSel = h('select', null, type.statuses.map((s) =>
@@ -52,6 +76,7 @@ export async function openItemForm(space, item, onSaved) {
     if (missing) return toast(`${missing.label} is required`);
 
     const row = toRow(values, item || {});
+    row.data.assignee_id = assignee.value || null;
     if (statusSel) row.status = statusSel.value;
     const reminderChanged = row.remind_at && (!item?.remind_at || new Date(row.remind_at).getTime() !== new Date(item.remind_at).getTime());
     if (reminderChanged) row.remind_user_id = state.user.id; // reminders go to whoever set them
@@ -60,6 +85,12 @@ export async function openItemForm(space, item, onSaved) {
       try {
         if (isNew) await createItem({ space_id: space.id, ...row });
         else await updateItem(item.id, row);
+        try {
+          if (assignee.value) localStorage.setItem(lastAssigneeKey, assignee.value);
+          else localStorage.removeItem(lastAssigneeKey);
+        } catch (error) {
+          toast(`Item saved, but could not remember the last assignee: ${errorText(error)}`);
+        }
         close();
         onSaved();
         if (reminderChanged && (await pushStatus()) !== 'enabled') toast('Reminder saved. Turn on notifications in Settings to receive it.', 4500);
