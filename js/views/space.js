@@ -210,7 +210,7 @@ function openSpaceMenu(space) {
   const icon = iconOptions(isLibraryIcon(space.icon) ? space.icon : '', !isLibraryIcon(space.icon));
   const emoji = h('input', {
     value: isLibraryIcon(space.icon) ? '' : space.icon || '',
-    placeholder: '🎁',
+    placeholder: '📝',
     maxlength: '4',
     class: 'emoji-input',
   });
