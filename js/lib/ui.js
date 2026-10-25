@@ -20,7 +20,8 @@ export function openSheet(title, body) {
     h('div', { class: 'sheet' },
       h('div', { class: 'sheet-head' },
         h('h2', null, title),
-        h('button', { class: 'icon-btn', type: 'button', onclick: close, 'aria-label': 'Close' }, '✕')),
+        h('button', { class: 'icon-btn', type: 'button', onclick: close, 'aria-label': 'Close' },
+          h('img', { class: 'cross-icon-image', src: 'icons/Cross_Icon.svg', alt: '' }))),
       body));
   root.append(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
