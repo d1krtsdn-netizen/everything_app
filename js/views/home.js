@@ -10,10 +10,11 @@ export function renderHome(root) {
   const tiles = state.spaces.map((s) => {
     const t = getType(s.type);
     const tags = [t.label];
-    if ((s.space_members?.length || 1) > 1) tags.push('Shared');
+    const shared = (s.space_members?.length || 1) > 1;
     if (myRole(s) === 'viewer') tags.push('View only');
     return h('a', { class: 'tile', href: `#/space/${s.id}` },
       h('div', { class: 'tile-icon' }, iconContent(s.icon || t.icon, 'category-icon-image')),
+      shared ? h('span', { class: 'tile-shared' }, 'Shared') : null,
       h('div', { class: 'tile-name' }, s.name),
       h('div', { class: 'tile-sub' }, tags.join(' · ')));
   });
