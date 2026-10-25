@@ -134,15 +134,28 @@ export async function renderSpace(root, spaceId, params) {
       : type.sections ? type.sections(shown, items) : [{ items: shown }];
     if (pageSummary) pageSummary.replaceChildren(type.summary(items));
     const out = [];
+    const sectionItemCount = (section) => section.items?.length
+      || section.children?.reduce((count, child) => count + sectionItemCount(child), 0)
+      || 0;
     for (const sec of sections) {
       if (sec.children) {
-        const childSections = sec.children.filter((child) => child.items.length);
+        const childSections = sec.children.filter((child) => sectionItemCount(child));
         if (!childSections.length) continue;
-        out.push(h('section', { class: 'section' },
-          h('h3', { class: 'section-title' }, sec.title),
-          childSections.map((child) => h('section', { class: 'subsection' },
-            h('h4', { class: 'subsection-title' }, child.title),
-            child.items.map((item) => renderCard(item, type.card || defaultCard))))));
+        const renderChild = (child) => h('section', { class: 'subsection' },
+          h('h4', { class: 'subsection-title' }, child.title),
+          child.children
+            ? child.children.filter((nested) => sectionItemCount(nested)).map(renderChild)
+            : child.items.map((item) => renderCard(item, type.card || defaultCard)));
+        const content = childSections.map(renderChild);
+        if (sec.collapsible) {
+          out.push(h('details', { class: 'section', open: openSections[sec.title] ?? !sec.collapsed,
+            ontoggle: (e) => { openSections[sec.title] = e.target.open; } },
+            h('summary', null, sec.title, ' ', h('span', { class: 'count' }, sectionItemCount(sec))), content));
+        } else {
+          out.push(h('section', { class: 'section' },
+            h('h3', { class: 'section-title' }, sec.title),
+            content));
+        }
         continue;
       }
       const card = view === 'grid' && type.gridCard

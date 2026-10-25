@@ -100,21 +100,38 @@ export default {
 
   sections(items) {
     const need = items.filter((i) => i.status !== 'bought');
-    const bought = items.filter((i) => i.status === 'bought')
-      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    const bought = items.filter((i) => i.status === 'bought');
+    const groceries = (group) => GROCERY_SUBCATEGORIES
+      .map((subcategory) => ({
+        title: subcategory,
+        items: group.filter((item) => catOf(item) === 'Groceries' && subcategoryOf(item) === subcategory)
+          .sort((a, b) => a.title.localeCompare(b.title)),
+      }))
+      .filter((section) => section.items.length);
+    const otherCategories = (group) => CATEGORIES
+      .filter((category) => category !== 'Groceries')
+      .map((category) => ({
+        title: category,
+        items: group.filter((item) => catOf(item) === category)
+          .sort((a, b) => a.title.localeCompare(b.title)),
+      }))
+      .filter((section) => section.items.length);
+
     return [
       {
         title: 'Groceries',
-        children: GROCERY_SUBCATEGORIES
-          .map((subcategory) => ({
-            title: subcategory,
-            items: need.filter((item) => catOf(item) === 'Groceries' && subcategoryOf(item) === subcategory),
-          }))
-          .filter((section) => section.items.length),
+        children: groceries(need),
       },
-      ...CATEGORIES.filter((category) => category !== 'Groceries')
-        .map((category) => ({ title: category, items: need.filter((item) => catOf(item) === category) })),
-      { title: 'Bought – tap ↺ to add back', items: bought, collapsible: true, collapsed: true },
+      ...otherCategories(need),
+      {
+        title: 'Bought – tap ↺ to add back',
+        collapsible: true,
+        collapsed: true,
+        children: [
+          { title: 'Groceries', children: groceries(bought) },
+          ...otherCategories(bought),
+        ].filter((section) => section.children?.length || section.items?.length),
+      },
     ];
   },
 
