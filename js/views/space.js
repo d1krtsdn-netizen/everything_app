@@ -9,7 +9,7 @@ import { defaultCard } from './card.js';
 import { openItemForm } from './item-form.js';
 import { openSharing } from './share-sheet.js';
 import {
-  loadSpaces, listItems, createItem, updateItem, watchItems, parseLink,
+  loadSpaces, listItems, listMembers, createItem, updateItem, watchItems, parseLink,
   updateSpace, deleteSpace, removeMember,
 } from '../store.js';
 
@@ -20,6 +20,16 @@ export async function renderSpace(root, spaceId, params) {
 
   const type = getType(space.type);
   const editable = canEdit(space);
+  let memberLabels = new Map();
+  try {
+    const members = await listMembers(spaceId);
+    memberLabels = new Map(members.map((member) => [
+      member.user_id,
+      member.profiles?.display_name || member.profiles?.email || 'Member',
+    ]));
+  } catch (error) {
+    toast(`Could not load assignee names: ${errorText(error)}`);
+  }
   const filters = type.filters || [
     { id: 'all', label: 'All', test: () => true },
     ...type.statuses.map((s) => ({ id: s.id, label: s.label, test: (i) => i.status === s.id })),
@@ -64,6 +74,21 @@ export async function renderSpace(root, spaceId, params) {
     },
     toggleDone: () => patchItem(item, { status: item.status === type.doneStatus ? type.defaultStatus : type.doneStatus }),
   });
+
+  const renderCard = (item, card) => {
+    const cardElement = card(item, ctxFor(item));
+    const assigneeId = item.data?.assignee_id;
+    if (!assigneeId) return cardElement;
+
+    const assigneeName = memberLabels.get(assigneeId) || 'Former member';
+    cardElement.classList.add('has-assignee');
+    if (view === 'list') cardElement.classList.add(`list-assignee-${type.id}`);
+    cardElement.append(h('span', {
+      class: 'card-assignee',
+      title: `Assigned to ${assigneeName}`,
+    }, assigneeName));
+    return cardElement;
+  };
 
   // What quick-add handlers can do (passed to type.onQuickAdd)
   const lastAssigneeKey = `last-assignee-${state.user.id}-${space.id}`;
@@ -117,13 +142,13 @@ export async function renderSpace(root, spaceId, params) {
           h('h3', { class: 'section-title' }, sec.title),
           childSections.map((child) => h('section', { class: 'subsection' },
             h('h4', { class: 'subsection-title' }, child.title),
-            child.items.map((item) => (type.card || defaultCard)(item, ctxFor(item)))))));
+            child.items.map((item) => renderCard(item, type.card || defaultCard))))));
         continue;
       }
       const card = view === 'grid' && type.gridCard
         ? type.gridCard
         : view === 'compact' && type.compactCard ? type.compactCard : type.card || defaultCard;
-      const cards = sec.items.map((it) => card(it, ctxFor(it)));
+      const cards = sec.items.map((it) => renderCard(it, card));
       if (!sec.title) { out.push(...cards); continue; }
       if (!sec.items.length) continue;
       if (sec.collapsible) {
