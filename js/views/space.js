@@ -33,6 +33,7 @@ export async function renderSpace(root, spaceId, params) {
   let items = [];
   const openSections = {};
 
+  const pageSummary = type.summary ? h('div', { class: 'space-summary' }) : null;
   const list = h('div', { class: 'list' });
   const chips = h('div', { class: 'chips' });
   const viewControls = h('div', { class: 'view-controls', 'aria-label': 'Card layout' });
@@ -95,8 +96,9 @@ export async function renderSpace(root, spaceId, params) {
     if (type.sort) shown.sort(type.sort);
 
     const sections = view === 'grid' && type.gridSections
-      ? type.gridSections(shown)
-      : type.sections ? type.sections(shown) : [{ items: shown }];
+      ? type.gridSections(shown, items)
+      : type.sections ? type.sections(shown, items) : [{ items: shown }];
+    if (pageSummary) pageSummary.replaceChildren(type.summary(items));
     const out = [];
     for (const sec of sections) {
       if (sec.children) {
@@ -121,7 +123,8 @@ export async function renderSpace(root, spaceId, params) {
           h('summary', null, sec.title, ' ', h('span', { class: 'count' }, sec.items.length)), cards));
       } else {
         out.push(h('section', { class: 'section' + (sec.divider ? ' month-section' : '') },
-          h('h3', { class: 'section-title' + (sec.divider ? ' month-divider' : '') }, sec.title), cards));
+          h('h3', { class: 'section-title' + (sec.divider ? ' month-divider' : '') },
+            sec.title, sec.total != null ? h('span', { class: 'section-total' }, sec.total) : null), cards));
       }
     }
     if (!shown.filter((i) => type.hideFilters ? i.status !== type.doneStatus : true).length) {
@@ -172,6 +175,7 @@ export async function renderSpace(root, spaceId, params) {
       ],
     }),
     h('main', { class: 'page' },
+      pageSummary,
       editable ? quick : h('p', { class: 'muted small' }, 'View only – shared with you.'),
       filterAndView, list));
 

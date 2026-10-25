@@ -76,6 +76,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tile.add { border: 2px dashed var(--line); background: transparent; box-shadow: none; color: var(--muted); }
 
 /* ===== Category screen ===== */
+.bill-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--muted); font-size: 13px; }
+.bill-summary strong { color: var(--text); font-size: 16px; }
 .quick-add { display: flex; gap: 8px; margin: 4px 0 12px; }
 .add-btn { background: var(--accent); color: #fff; width: 48px; height: 48px; flex: none; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
@@ -97,7 +99,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .subsection-title { margin: 2px 4px 0; color: var(--muted); font-size: 12px; font-weight: 600; }
 .month-section { gap: 10px; margin-top: 12px; }
 .month-divider { display: flex; align-items: center; gap: 12px; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 700; color: var(--text); }
-.month-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.month-divider::after { content: ''; order: 1; height: 1px; flex: 1; background: var(--line); }
+.section-total { order: 2; flex: none; }
 .list.compact-list { gap: 10px; }
 .compact-list .section:not(details) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
 .compact-list .section-title { grid-column: 1 / -1; }

@@ -16,6 +16,34 @@ const formatPrice = (value) => value == null || value === ''
   ? ''
   : new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(value));
 
+const formatTotal = (value) => {
+  const amount = Math.round(value * 100) / 100;
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
+function billSections(items, allItems = items) {
+  const totals = new Map();
+  for (const item of allItems) {
+    const category = CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other';
+    totals.set(category, (totals.get(category) || 0) + (Number(item.data?.price) || 0));
+  }
+  return CATEGORIES
+    .map((category) => ({
+      title: category,
+      total: formatTotal(totals.get(category) || 0),
+      divider: true,
+      items: items.filter((item) =>
+        (CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other') === category),
+    }))
+    .filter((section) => section.items.length)
+    .sort((a, b) => totals.get(b.title) - totals.get(a.title) || CATEGORIES.indexOf(a.title) - CATEGORIES.indexOf(b.title));
+}
+
 const shortDate = (value) => value
   ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' }).format(new Date(value))
   : 'No due date';
@@ -110,6 +138,12 @@ export default {
   doneStatus: 'paid',
   quickAddPlaceholder: 'Add a bill… (e.g. Netflix 12.99)',
   emptyText: 'No bills or subscriptions yet.',
+  summary(items) {
+    const total = items.reduce((sum, item) => sum + (Number(item.data?.price) || 0), 0);
+    return h('section', { class: 'bill-summary' },
+      h('span', null, 'Total across all categories'),
+      h('strong', null, formatTotal(total)));
+  },
   fields: [
     { key: 'title', label: 'Name', type: 'text', required: true, placeholder: 'e.g. Netflix' },
     { key: 'category', label: 'Type', type: 'select', options: CATEGORIES, default: 'Other' },
@@ -134,22 +168,8 @@ export default {
   ],
   defaultFilter: 'upcoming',
   sort: (a, b) => dateAsc(a.due_at, b.due_at),
-  gridSections(items) {
-    const totals = new Map();
-    for (const item of items) {
-      const category = CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other';
-      totals.set(category, (totals.get(category) || 0) + (Number(item.data?.price) || 0));
-    }
-    return CATEGORIES
-      .map((category) => ({
-        title: category,
-        divider: true,
-        items: items.filter((item) =>
-          (CATEGORIES.includes(item.data?.category) ? item.data.category : 'Other') === category),
-      }))
-      .filter((section) => section.items.length)
-      .sort((a, b) => totals.get(b.title) - totals.get(a.title) || CATEGORIES.indexOf(a.title) - CATEGORIES.indexOf(b.title));
-  },
+  sections: billSections,
+  gridSections: billSections,
 
   async onQuickAdd(text, { create }) {
     const match = text.match(/^(.*?)\s+£?(\d+(?:\.\d{1,2})?)$/);
