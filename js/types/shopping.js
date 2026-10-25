@@ -77,6 +77,7 @@ export default {
   icon: 'icons/list_icons/Shopping_Bag_02.svg',
   itemLabel: 'item',
   description: 'Things to buy, with links. Tick when bought, re-add with one tap.',
+  layouts: ['list', 'grid'],
   statuses: [
     { id: 'needed', label: 'To buy', color: '#5b5bd6' },
     { id: 'bought', label: 'Bought', color: '#10b981' },
@@ -98,7 +99,7 @@ export default {
   ],
   sort: (a, b) => a.title.localeCompare(b.title),
 
-  sections(items) {
+  sections(items, grid = false) {
     const need = items.filter((i) => i.status !== 'bought');
     const bought = items.filter((i) => i.status === 'bought');
     const groceries = (group) => GROCERY_SUBCATEGORIES
@@ -124,7 +125,7 @@ export default {
       },
       ...otherCategories(need),
       {
-        title: 'Bought – tap ↺ to add back',
+        title: grid ? 'Bought – tap card to add back' : 'Bought – tap ↺ to add back',
         collapsible: true,
         collapsed: true,
         children: [
@@ -133,6 +134,10 @@ export default {
         ].filter((section) => section.children?.length || section.items?.length),
       },
     ];
+  },
+
+  gridSections(items) {
+    return this.sections(items, true);
   },
 
   card(item, ctx) {
@@ -149,6 +154,26 @@ export default {
           reminderBadge(item))),
       bought ? h('button', { class: 'btn small', 'aria-label': 'Add back to list',
         onclick: (event) => { event.stopPropagation(); ctx.setStatus('needed'); } }, '↺') : null);
+  },
+
+  gridCard(item, ctx) {
+    const bought = item.status === 'bought';
+    const toggleStatus = () => ctx.setStatus(bought ? 'needed' : 'bought');
+    return h('article', {
+      class: 'card shopping-grid-card' + (bought ? ' done' : ''),
+      role: ctx.canEdit ? 'button' : null,
+      tabindex: ctx.canEdit ? '0' : null,
+      'aria-label': `${item.title || 'Untitled'}${bought ? ', bought' : ', mark as bought'}`,
+      onclick: ctx.canEdit ? toggleStatus : null,
+      onkeydown: ctx.canEdit ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleStatus();
+        }
+      } : null,
+    },
+    h('span', { class: 'shopping-grid-emoji', 'aria-hidden': 'true' }, emojiOf(item)),
+    h('span', { class: 'shopping-grid-title' }, item.title || 'Untitled'));
   },
 
   meta(item) {

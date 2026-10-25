@@ -198,6 +198,12 @@ details.section > summary::-webkit-details-marker { display: none; }
 .bill-paid-button:disabled { opacity: .55; cursor: default; }
 .grid-list .month-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 10px; }
 .grid-list .month-divider { grid-column: 1 / -1; }
+.shopping-grid-list .shopping-grid-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 8px; padding-left: 0; }
+.shopping-grid-list .shopping-grid-cards .subsection-title { grid-column: 1 / -1; }
+.shopping-grid-card { display: flex; min-width: 0; min-height: 104px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 6px; text-align: center; }
+.shopping-grid-emoji { font-size: 30px; line-height: 1; }
+.shopping-grid-title { display: -webkit-box; width: 100%; overflow: hidden; color: var(--text); font-size: 12px; font-weight: 600; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.shopping-grid-card.done .shopping-grid-title { color: var(--muted); text-decoration: line-through; }
 .bill-grid-card { display: flex; min-width: 0; height: auto; aspect-ratio: auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; overflow: hidden; padding: 9px 7px; text-align: center; }
 .bill-grid-card.overdue { border: 1px solid var(--danger); }
 .bill-grid-card .bill-icon-grid { width: clamp(36px, 50%, 64px); flex: none; }

@@ -109,7 +109,8 @@ export async function renderSpace(root, spaceId, params) {
   function draw() {
     list.className = 'list'
       + (legacyLayouts && view === 'compact' ? ' compact-list' : '')
-      + (supportsLayouts && view === 'grid' ? ' grid-list' : '');
+      + (supportsLayouts && view === 'grid' ? ' grid-list' : '')
+      + (supportsLayouts && view === 'grid' && type.id === 'shopping' ? ' shopping-grid-list' : '');
     if (supportsLayouts || legacyLayouts) {
       const labels = supportsLayouts
         ? { list: ['List view', '☰'], grid: ['Grid view', '▦'] }
@@ -141,11 +142,17 @@ export async function renderSpace(root, spaceId, params) {
       if (sec.children) {
         const childSections = sec.children.filter((child) => sectionItemCount(child));
         if (!childSections.length) continue;
-        const renderChild = (child) => h('section', { class: 'subsection' },
+        const childCard = view === 'grid' && type.gridCard
+          ? type.gridCard
+          : type.card || defaultCard;
+        const renderChild = (child) => h('section', {
+          class: 'subsection' + (view === 'grid' && type.id === 'shopping' && !child.children
+            ? ' shopping-grid-cards' : ''),
+        },
           h('h4', { class: 'subsection-title' }, child.title),
           child.children
             ? child.children.filter((nested) => sectionItemCount(nested)).map(renderChild)
-            : child.items.map((item) => renderCard(item, type.card || defaultCard)));
+            : child.items.map((item) => renderCard(item, childCard)));
         const content = childSections.map(renderChild);
         if (sec.collapsible) {
           out.push(h('details', { class: 'section', open: openSections[sec.title] ?? !sec.collapsed,
