@@ -3,10 +3,10 @@
 import events from './events.js';
 import todo from './todo.js';
 import shopping from './shopping.js';
-import list from './list.js';
 import bills from './bills.js';
+import list from './list.js';
 
-export const TYPES = Object.fromEntries([events, todo, shopping, list, bills].map((t) => [t.id, t]));
+export const TYPES = Object.fromEntries([events, todo, shopping, bills, list].map((t) => [t.id, t]));
 export const getType = (id) => TYPES[id] || TYPES.list;
 export const typeList = () => Object.values(TYPES);
 

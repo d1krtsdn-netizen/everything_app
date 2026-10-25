@@ -1,11 +1,11 @@
 import { h } from './dom.js';
 
 export const LIST_ICONS = [
-  { path: 'icons/list_icons/Ticket_Voucher.svg', label: 'Ticket Voucher' },
-  { path: 'icons/list_icons/List_Checklist.svg', label: 'List Checklist' },
-  { path: 'icons/list_icons/Shopping_Bag_02.svg', label: 'Shopping Bag 02' },
-  { path: 'icons/list_icons/Credit_Card_01.svg', label: 'Credit Card 01' },
-  { path: 'icons/list_icons/Note_Edit.svg', label: 'Note Edit' },
+  { path: 'icons/list_icons/Ticket_Voucher.svg', label: 'Ticket' },
+  { path: 'icons/list_icons/List_Checklist.svg', label: 'Checklist' },
+  { path: 'icons/list_icons/Shopping_Bag_02.svg', label: 'Shopping Bag' },
+  { path: 'icons/list_icons/Credit_Card_01.svg', label: 'Credit Card' },
+  { path: 'icons/list_icons/Note_Edit.svg', label: 'Notepad' },
 ];
 
 export function iconContent(icon, className) {
