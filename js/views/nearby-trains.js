@@ -1,9 +1,10 @@
 import { h } from '../lib/dom.js';
 import { state } from '../state.js';
-import { getTrainDepartures, getTrainPreferences } from '../store.js';
+import { getTrainDepartures, getTrainPreferences, setTrainPreferences } from '../store.js';
 
 const LOCATION_MAX_AGE = 2 * 60_000;
 const REFRESH_INTERVAL = 60_000;
+const STATION_RADIUS_METERS = 1000;
 
 function cachedLocation(key) {
   try {
@@ -37,6 +38,15 @@ function distanceText(meters) {
   return distance >= 1000 ? `${(distance / 1000).toFixed(1)} km away` : `${Math.round(distance)} m away`;
 }
 
+function stationsWithinRadius(stations) {
+  return stations
+    .filter((station) => station.distanceMeters != null
+      && Number.isFinite(Number(station.distanceMeters))
+      && Number(station.distanceMeters) >= 0
+      && Number(station.distanceMeters) <= STATION_RADIUS_METERS)
+    .sort((a, b) => Number(a.distanceMeters) - Number(b.distanceMeters));
+}
+
 function departureRow(departure) {
   const minutes = Number(departure.minutesAway);
   const time = Number.isFinite(minutes)
@@ -58,29 +68,55 @@ export function NearbyTrainsBanner() {
     ontoggle: (event) => localStorage.setItem(expandedKey, String(event.target.open)),
   });
   let nearbyStations = [];
+  let selectedStation = null;
+  let availableStations = [];
+  let selectedLine = null;
   let timer = null;
   let loading = false;
   const locationKey = `nearby-trains-location-${state.user.id}`;
 
   function draw(content, title = 'Nearby trains') {
+    const station = content.station || selectedStation;
+    const lines = [...new Set((station?.lines || []).filter((line) => typeof line === 'string' && line.trim()))]
+      .sort((a, b) => a.localeCompare(b));
+    const stationSelector = station && availableStations.length > 1
+      ? h('select', {
+        class: 'train-station-select',
+        'aria-label': 'Select nearby station',
+        disabled: loading,
+        onchange: (event) => selectStation(event.target.value),
+      }, availableStations.map((option) => h('option', { value: option.id, selected: option.id === station.id },
+        `${option.name} · ${distanceText(option.distanceMeters)}`)))
+      : station ? h('span', { class: 'train-station' },
+        station.name, content.distance ? ` · ${content.distance}` : '') : null;
+    const lineFilters = station ? h('div', { class: 'chips train-line-filters', role: 'group', 'aria-label': 'Filter by train line' },
+      h('button', { class: `chip${selectedLine ? '' : ' on'}`, type: 'button', 'aria-pressed': String(!selectedLine),
+        disabled: loading, onclick: () => selectLine(null) }, 'All'),
+      lines.map((line) => h('button', {
+        class: `chip${selectedLine === line ? ' on' : ''}`,
+        type: 'button',
+        'aria-pressed': String(selectedLine === line),
+        disabled: loading,
+        onclick: () => selectLine(line),
+      }, line))) : null;
     root.replaceChildren(
       h('summary', { class: 'upcoming-heading train-heading' },
         h('div', { class: 'train-heading-info' },
           h('strong', null, title),
-          content.station ? h('span', { class: 'train-station' },
-            content.station.name, content.distance ? ` · ${content.distance}` : '') : null),
+          stationSelector),
         h('button', { class: 'icon-btn train-refresh', type: 'button', 'aria-label': 'Refresh nearby trains',
           onclick: (event) => {
             event.preventDefault();
             event.stopPropagation();
             refresh();
           } }, '↻')),
+      lineFilters,
       content.body,
       h('small', { class: 'train-attribution' }, 'Powered by TfL Open Data'));
   }
 
   function drawLoading() {
-    draw({ body: h('div', { class: 'train-skeleton', 'aria-label': 'Loading nearby trains' },
+    draw({ station: selectedStation, body: h('div', { class: 'train-skeleton', 'aria-label': 'Loading nearby trains' },
       h('span'), h('span'), h('span')) });
   }
 
@@ -100,35 +136,84 @@ export function NearbyTrainsBanner() {
       const currentLocation = location || await requestLocation();
       if (!location) localStorage.setItem(locationKey, JSON.stringify(currentLocation));
       const preferences = getTrainPreferences();
-      const response = await getTrainDepartures({
+      const request = {
         lat: currentLocation.lat,
         lon: currentLocation.lon,
         ...(preferences.selectedStationId ? { stationId: preferences.selectedStationId } : {}),
         ...(preferences.direction ? { direction: preferences.direction } : {}),
         limit: 3,
+      };
+      let response = await getTrainDepartures({
+        ...request,
+        ...(selectedLine ? { line: selectedLine } : {}),
       });
       if (!root.isConnected) return;
+      let station = response.selectedStation;
+      availableStations = stationsWithinRadius(response.nearbyStations || []);
+      if (station && !availableStations.some((option) => option.id === station.id)) {
+        if (preferences.selectedStationId) {
+          setTrainPreferences({ selectedStationId: null });
+          selectedLine = null;
+          response = await getTrainDepartures({
+            lat: currentLocation.lat,
+            lon: currentLocation.lon,
+            limit: 3,
+          });
+          station = response.selectedStation;
+          availableStations = stationsWithinRadius(response.nearbyStations || []);
+        } else {
+          station = availableStations[0] || null;
+        }
+      }
+      if (station && selectedLine && !station.lines?.includes(selectedLine)) {
+        selectedLine = null;
+        response = await getTrainDepartures({
+          lat: currentLocation.lat,
+          lon: currentLocation.lon,
+          stationId: station.id,
+          ...(preferences.direction ? { direction: preferences.direction } : {}),
+          limit: 3,
+        });
+      }
       nearbyStations = Array.isArray(response.nearbyStations) ? response.nearbyStations : [];
-      const station = response.selectedStation;
       if (!station) {
-        draw({ body: h('p', { class: 'train-message', role: 'status' }, 'No TfL stations nearby') });
+        selectedStation = null;
+        loading = false;
+        draw({ body: h('p', { class: 'train-message', role: 'status' }, 'No TfL stations within 1 km') });
         return;
       }
+      selectedStation = station;
       const departures = Array.isArray(response.departures) ? response.departures : [];
+      loading = false;
       draw({
         station,
         distance: distanceText(station.distanceMeters),
         body: departures.length
           ? h('div', { class: 'train-departures' }, departures.slice(0, 3).map(departureRow))
-          : h('p', { class: 'train-message', role: 'status' }, 'No live departures available'),
+          : h('p', { class: 'train-message', role: 'status' },
+            selectedLine ? `No trains found for ${selectedLine}.` : 'No live departures available'),
       });
     } catch (error) {
       if (!root.isConnected) return;
+      loading = false;
       if (error?.code === 1) drawError('Location permission denied.', true);
       else drawError(error?.message || 'Could not load nearby trains.');
     } finally {
       loading = false;
     }
+  }
+
+  function selectLine(line) {
+    if (loading) return;
+    selectedLine = selectedLine === line ? null : line;
+    refresh();
+  }
+
+  function selectStation(stationId) {
+    if (loading || !availableStations.some((station) => station.id === stationId)) return;
+    setTrainPreferences({ selectedStationId: stationId });
+    selectedLine = null;
+    refresh();
   }
 
   function startTimer() {
