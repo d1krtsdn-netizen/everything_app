@@ -78,16 +78,99 @@ export async function updateProfile(patch) {
 export const savePushSubscription = async (s) =>
   ok(await supabase.from('push_subscriptions').upsert({ ...s, user_id: state.user.id }, { onConflict: 'endpoint' }));
 
+// ---------- home display preferences ----------
+const homePreferencesKey = () => `home-preferences-${state.user.id}`;
+const defaultHomePreferences = () => ({ upcomingEnabled: true, nearbyTrainsEnabled: true });
+
+export function getHomePreferences() {
+  try {
+    const saved = localStorage.getItem(homePreferencesKey());
+    if (!saved) return defaultHomePreferences();
+    const preferences = JSON.parse(saved);
+    if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) {
+      return defaultHomePreferences();
+    }
+    return {
+      upcomingEnabled: preferences.upcomingEnabled !== false,
+      nearbyTrainsEnabled: preferences.nearbyTrainsEnabled !== false,
+    };
+  } catch {
+    return defaultHomePreferences();
+  }
+}
+
+export function setHomePreferences(patch) {
+  const preferences = { ...getHomePreferences(), ...patch };
+  const normalized = {
+    upcomingEnabled: preferences.upcomingEnabled !== false,
+    nearbyTrainsEnabled: preferences.nearbyTrainsEnabled !== false,
+  };
+  localStorage.setItem(homePreferencesKey(), JSON.stringify(normalized));
+  return normalized;
+}
+
 // ---------- server API (/api/*) ----------
 export async function callApi(path, body) {
   const { data: { session } } = await supabase.auth.getSession();
+  if (path === '/api/parse-media') console.log('REQUEST_SENT', { endpoint: path });
   const r = await fetch(path, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${session?.access_token}` },
     body: JSON.stringify(body || {}),
   });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || `Request failed (${r.status})`);
+  if (path === '/api/parse-media') console.log('API_HTTP_STATUS', r.status);
+  const responseText = await r.text();
+  let j;
+  try { j = JSON.parse(responseText); }
+  catch {
+    if (path === '/api/parse-media') {
+      throw new Error(responseText.trim() || `Could not read API response (${r.status})`);
+    }
+    j = {};
+  }
+  if (!r.ok) {
+    const error = new Error(j && typeof j.error === 'string' ? j.error : `Request failed (${r.status})`);
+    if (j && j.stage) error.stage = j.stage;
+    throw error;
+  }
   return j;
 }
 export const parseLink = (url) => callApi('/api/parse-link', { url });
+export const parseMedia = ({ file, text }) => callApi('/api/parse-media', { file, text });
+
+// ---------- train preferences and departures ----------
+const trainPreferencesKey = () => `train-preferences-${state.user.id}`;
+const defaultTrainPreferences = () => ({ selectedStationId: null, direction: null, favouriteStations: [] });
+
+export function getTrainPreferences() {
+  try {
+    const saved = localStorage.getItem(trainPreferencesKey());
+    if (!saved) return defaultTrainPreferences();
+    const preferences = JSON.parse(saved);
+    if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) {
+      return defaultTrainPreferences();
+    }
+    return {
+      ...defaultTrainPreferences(),
+      ...preferences,
+      selectedStationId: typeof preferences.selectedStationId === 'string' ? preferences.selectedStationId : null,
+      direction: typeof preferences.direction === 'string' ? preferences.direction : null,
+      favouriteStations: Array.isArray(preferences.favouriteStations) ? preferences.favouriteStations : [],
+    };
+  } catch {
+    return defaultTrainPreferences();
+  }
+}
+
+export function setTrainPreferences(patch) {
+  const saved = { ...getTrainPreferences(), ...patch };
+  const preferences = {
+    selectedStationId: typeof saved.selectedStationId === 'string' ? saved.selectedStationId : null,
+    direction: typeof saved.direction === 'string' ? saved.direction : null,
+    favouriteStations: Array.isArray(saved.favouriteStations) ? saved.favouriteStations : [],
+  };
+  localStorage.setItem(trainPreferencesKey(), JSON.stringify(preferences));
+  return preferences;
+}
+
+export const getTrainDepartures = (params) => callApi('/api/departures', params);

@@ -5,26 +5,74 @@ import { reminderField } from './fields.js';
 
 const upcoming = (i) => !i.due_at || new Date(i.due_at) >= startOfToday();
 
-// Converts /api/parse-link output into form values
-const fromLink = (info) => ({
-  url: info.url, title: info.title || info.site || info.url, due_at: info.start,
-  location: info.location, price: info.price, site: info.site, image: info.image,
+const sourceLabel = (source) => ({ image: 'Screenshot', pdf: 'PDF', text: 'Message' }[source] || '');
+const logAttachmentStage = (stage, details = {}) => console.log(stage, details);
+const eventValues = (event = {}, source = '', uploadedUrl = '', mimeType = '') => ({
+  url: event.url || '',
+  title: event.title || event.site || event.url || 'Untitled event',
+  due_at: event.start || null,
+  location: event.location || '',
+  price: event.price || '',
+  site: event.site || sourceLabel(source),
+  image: mimeType?.startsWith('image/') ? uploadedUrl : event.image || '',
+  attachment: mimeType === 'application/pdf' ? uploadedUrl : '',
+  notes: event.notes || '',
+  source,
 });
+const fromLink = (parsed) => eventValues(parsed.events?.[0] || parsed, parsed.source || 'link');
+const createEvents = async (events, source, create, uploadedUrl = '', mimeType = '', logStages = false) => {
+  for (const event of events) {
+    const values = eventValues(event, source, uploadedUrl, mimeType);
+    if (logStages) logAttachmentStage('EVENT_CREATE_STARTED', { title: values.title });
+    await create(values);
+    if (logStages) logAttachmentStage('EVENT_CREATE_COMPLETED', { title: values.title });
+  }
+};
+
+function readAsBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error(reader.error?.message || 'Could not read the selected file'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function imageAsJpeg(file) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 1200 / bitmap.width);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Could not prepare the image');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+    if (!blob) throw new Error('Could not convert the image');
+    return await readAsBase64(blob);
+  } finally {
+    bitmap.close();
+  }
+}
 
 export default {
   id: 'events',
   label: 'Events',
   icon: 'icons/list_icons/Ticket_Voucher.svg',
   itemLabel: 'event',
-  description: 'Events from links you share. Shows site, image, price and location.',
+  description: 'Create events from links, messages, images and PDFs.',
+  attachButton: true,
   statuses: [
     { id: 'pending', label: 'Pending', color: '#f59e0b' },
     { id: 'bought', label: 'Bought', color: '#10b981' },
     { id: 'not_going', label: 'Not going', color: '#8e8e99' },
   ],
   defaultStatus: 'pending',
-  quickAddPlaceholder: 'Paste an event link…',
-  emptyText: 'No events yet. Share a link from Safari or paste one above.',
+  quickAddPlaceholder: 'Paste an event link or describe it…',
+  emptyText: 'No events yet. Share a link, message, image or PDF.',
   fields: [
     { key: 'url', label: 'Link', type: 'url', importButton: true, placeholder: 'https://…' },
     { key: 'title', label: 'Event name', type: 'text', required: true },
@@ -49,18 +97,71 @@ export default {
   sort: (a, b) => dateAsc(a.due_at, b.due_at),
   sections: monthSections,
 
-  async onQuickAdd(text, { create, parseLink, toast }) {
+  async onQuickAdd(text, { create, parseLink, parseMedia, toast }) {
     const url = extractUrl(text);
-    if (!url) return create({ title: text });
+    if (!url) {
+      toast('Reading…');
+      let parsed;
+      try {
+        parsed = await parseMedia({ text });
+      } catch (error) {
+        toast(`Could not read message – saved as text: ${error.message}`);
+        return create({ title: text, source: 'text', site: sourceLabel('text') });
+      }
+      if (parsed.events.length) return createEvents(parsed.events, parsed.source, create);
+      return create({ title: text, source: parsed.source || 'text', site: sourceLabel(parsed.source || 'text') });
+    }
+
     toast('Reading event page…');
-    let info = { url };
-    try { info = await parseLink(url); } catch { toast('Could not read the page – saved the link only'); }
-    return create(fromLink(info));
+    let parsed;
+    try {
+      parsed = await parseLink(url);
+    } catch (error) {
+      toast(`Could not read the page – saved the link only: ${error.message}`);
+      return create({ title: url, url, source: 'link' });
+    }
+    if (parsed.events?.length) return createEvents(parsed.events, parsed.source || 'link', create);
+    return create({ title: url, url, source: 'link' });
+  },
+
+  async onAttach(file, { create, parseMedia, toast }) {
+    const originalMimeType = file.type;
+    let mimeType = file.type;
+    let base64;
+    if (mimeType === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+      mimeType = 'application/pdf';
+      if (file.size > 3 * 1024 * 1024) throw new Error('PDF too large (max 3 MB)');
+      toast('Reading…');
+      base64 = await readAsBase64(file);
+    } else if (mimeType.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic)$/i.test(file.name)) {
+      toast('Reading…');
+      base64 = await imageAsJpeg(file);
+      mimeType = 'image/jpeg';
+    } else {
+      throw new Error('Choose an image or PDF');
+    }
+
+    logAttachmentStage('FILE_CONVERTED', {
+      filename: file.name,
+      originalMimeType,
+      mimeType,
+      originalSize: file.size,
+      convertedSize: base64.length * 3 / 4 - (base64.match(/=*$/)?.[0].length || 0),
+    });
+    const parsed = await parseMedia({ file: base64 });
+    if (!parsed.events.length) throw new Error('No event was found in the selected file');
+    await createEvents(parsed.events, parsed.source, create, parsed.uploadedUrl, parsed.mimeType || mimeType, true);
+    toast(`Created ${parsed.events.length} event${parsed.events.length === 1 ? '' : 's'}`);
   },
 
   card(item, ctx) {
     const d = item.data || {};
     const dim = item.status === 'not_going' || !upcoming(item);
+    const attachment = d.attachment
+      ? h('a', { class: 'pill link event-attachment', href: d.attachment, target: '_blank', rel: 'noopener',
+        onclick: (event) => event.stopPropagation() },
+      h('img', { src: 'icons/file_attachment.svg', alt: '' }), 'Original ↗')
+      : null;
     return h('article', { class: 'card event' + (dim ? ' dim' : ''), onclick: ctx.edit },
       d.image
         ? h('img', { class: 'event-img', src: d.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() })
@@ -72,7 +173,7 @@ export default {
         h('h3', { class: 'title' }, item.title || 'Untitled event'),
         item.due_at ? h('div', { class: 'line' }, '📅 ', fmtDate(item.due_at)) : null,
         d.location ? h('div', { class: 'line' }, '📍 ', d.location) : null,
-        h('div', { class: 'meta' }, linkOut(d.url), reminderBadge(item)),
+        h('div', { class: 'meta' }, linkOut(d.url), attachment, reminderBadge(item)),
         statusSegment(item, ctx)));
   },
 

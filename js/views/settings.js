@@ -3,11 +3,22 @@ import { h } from '../lib/dom.js';
 import { header, backLink, field, busy, toast, errorText } from '../lib/ui.js';
 import { state } from '../state.js';
 import { supabase } from '../lib/supabase.js';
-import { loadProfile, updateProfile, callApi } from '../store.js';
+import { loadProfile, updateProfile, callApi, getHomePreferences, setHomePreferences } from '../store.js';
 import { pushStatus, enablePush, PUSH_TEXT } from '../push.js';
 
 export async function renderSettings(root) {
   const p = state.profile || (await loadProfile());
+  const homePreferences = getHomePreferences();
+  const upcomingToggle = h('input', {
+    type: 'checkbox',
+    checked: homePreferences.upcomingEnabled,
+    onchange: (event) => setHomePreferences({ upcomingEnabled: event.target.checked }),
+  });
+  const trainsToggle = h('input', {
+    type: 'checkbox',
+    checked: homePreferences.nearbyTrainsEnabled,
+    onchange: (event) => setHomePreferences({ nearbyTrainsEnabled: event.target.checked }),
+  });
 
   // Account
   const name = h('input', { value: p.display_name || '' });
@@ -62,6 +73,15 @@ export async function renderSettings(root) {
 
       h('section', { class: 'panel' },
         h('h2', null, 'Notifications'), pushText, pushBtn, testBtn),
+
+      h('section', { class: 'panel' },
+        h('h2', null, 'Home page'),
+        h('label', { class: 'settings-toggle' },
+          h('span', null, h('strong', null, 'Upcoming events'), h('small', null, 'Show the Upcoming banner on the home page')),
+          upcomingToggle),
+        h('label', { class: 'settings-toggle' },
+          h('span', null, h('strong', null, 'Nearby trains'), h('small', null, 'Show the Nearby Trains banner on the home page')),
+          trainsToggle)),
 
       h('section', { class: 'panel' },
         h('h2', null, 'Share button (iOS Shortcut)'),
