@@ -9,7 +9,7 @@ import { defaultCard } from './card.js';
 import { openItemForm } from './item-form.js';
 import { openSharing } from './share-sheet.js';
 import {
-  loadSpaces, listItems, listMembers, createItem, updateItem, watchItems, parseLink,
+  loadSpaces, listItems, listMembers, createItem, updateItem, watchItems, parseLink, parseMedia,
   updateSpace, deleteSpace, removeMember,
 } from '../store.js';
 
@@ -93,7 +93,7 @@ export async function renderSpace(root, spaceId, params) {
   // What quick-add handlers can do (passed to type.onQuickAdd)
   const lastAssigneeKey = `last-assignee-${state.user.id}-${space.id}`;
   const helpers = {
-    space, type, toast, parseLink,
+    space, type, toast, parseLink, parseMedia,
     get items() { return items; },
     create: (values) => {
       const item = newItem(space, type, values);
@@ -201,6 +201,27 @@ export async function renderSpace(root, spaceId, params) {
   // Quick add bar
   const qa = h('input', { class: 'quick-input', placeholder: type.quickAddPlaceholder || `Add ${type.itemLabel}…`,
     enterkeyhint: 'done', list: type.suggestFromItems ? suggestions.id : null });
+  const fileInput = type.attachButton
+    ? h('input', { type: 'file', accept: 'image/*,application/pdf', hidden: true })
+    : null;
+  if (fileInput) fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    console.log('FILE_SELECTED', {
+      filename: file.name,
+      mimeType: file.type,
+      originalSize: file.size,
+    });
+    try {
+      await type.onAttach(file, helpers);
+      await reload();
+    } catch (error) {
+      console.error(error);
+      toast(`Could not create event: ${errorText(error)}`);
+    } finally {
+      fileInput.value = '';
+    }
+  });
   const quick = h('form', { class: 'quick-add', onsubmit: async (e) => {
     e.preventDefault();
     const text = qa.value.trim();
@@ -211,6 +232,10 @@ export async function renderSpace(root, spaceId, params) {
       await reload();
     } catch (err) { toast(errorText(err)); }
   } }, qa, suggestions,
+    fileInput,
+    type.attachButton ? h('button', { type: 'button', class: 'icon-btn attach-btn',
+      'aria-label': 'Attach an image or PDF', title: 'Attach an image or PDF',
+      onclick: () => fileInput.click() }, '📎') : null,
     h('button', { type: 'button', class: 'icon-btn add-btn', 'aria-label': 'Add with details',
       onclick: () => openItemForm(space, null, reload) }, '＋'));
 

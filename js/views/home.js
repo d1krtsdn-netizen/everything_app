@@ -4,7 +4,8 @@ import { header, openSheet, field, busy, toast, errorText } from '../lib/ui.js';
 import { state, myRole } from '../state.js';
 import { getType, typeList } from '../types/index.js';
 import { iconContent, iconOptions } from '../lib/icons.js';
-import { createSpace, loadSpaces, listItems } from '../store.js';
+import { createSpace, loadSpaces, listItems, getHomePreferences } from '../store.js';
+import { NearbyTrainsBanner } from './nearby-trains.js';
 
 export function renderHome(root) {
   const tiles = state.spaces.map((s) => {
@@ -21,16 +22,30 @@ export function renderHome(root) {
   tiles.push(h('button', { class: 'tile add', onclick: openNewSpace },
     h('div', { class: 'tile-icon' }, '＋'), h('div', { class: 'tile-name' }, 'New category')));
 
-  const upcoming = h('div', { class: 'upcoming' });
+  const preferences = getHomePreferences();
+  const homeBanners = [];
+  let upcoming = null;
+  let trains = null;
+  if (preferences.upcomingEnabled) {
+    upcoming = h('div', { class: 'upcoming' });
+    homeBanners.push(upcoming);
+  }
+  if (preferences.nearbyTrainsEnabled) {
+    trains = NearbyTrainsBanner();
+    homeBanners.push(trains.element);
+  }
   root.replaceChildren(
     header({ title: 'Everything', right: h('a', { class: 'icon-btn', href: '#/settings', 'aria-label': 'Settings' }, 
 h('img', { src: 'icons/Settings_Icon.svg', alt: '', class: 'settings-icon' })
     ) }),
-    h('main', { class: 'page' }, upcoming, h('div', { class: 'tiles' }, tiles)));
+    h('main', { class: 'page' }, ...homeBanners, h('div', { class: 'tiles' }, tiles)));
 
-  loadUpcoming(upcoming).catch((error) => {
-    if (upcoming.isConnected) toast(errorText(error));
-  });
+  if (upcoming) {
+    loadUpcoming(upcoming).catch((error) => {
+      if (upcoming.isConnected) toast(errorText(error));
+    });
+  }
+  return trains?.cleanup;
 }
 
 async function loadUpcoming(upcoming) {

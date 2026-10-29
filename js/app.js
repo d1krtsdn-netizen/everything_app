@@ -22,7 +22,7 @@ async function render() {
   try {
     if (parts[0] === 'space' && parts[1]) cleanup = (await renderSpace(root, parts[1], new URLSearchParams(query || ''))) || null;
     else if (parts[0] === 'settings') await renderSettings(root);
-    else renderHome(root);
+    else cleanup = renderHome(root) || null;
   } catch (e) {
     root.replaceChildren(h('main', { class: 'page' },
       h('p', null, 'Something went wrong: ' + errorText(e)),

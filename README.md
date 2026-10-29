@@ -101,6 +101,12 @@ You need: a Supabase account, a GitHub account, a Vercel account (all free), you
 
 ---
 
+## Nearby trains
+
+The home screen shows the next three live TfL departures from the nearest Tube, DLR, Overground, Elizabeth line or Tram station. Add `TFL_APP_KEY` to `.env.local` for local development and to Vercel environment variables; the key is used only by `/api/departures`.
+
+Train providers live in `lib/trains/providers/`. To add another provider, implement `findNearby(lat, lon)` and `getDepartures(station)` with the normalized station/departure fields, then register it in `lib/trains/index.js`.
+
 ## Making changes later (with AI)
 1. Give the AI `AI_GUIDE.md` plus the file(s) involved and describe the change.
 2. In GitHub open the file → ✏️ (Edit) → paste the new version → **Commit changes**. New files: **Add file → Create new file**.
