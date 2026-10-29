@@ -29,15 +29,20 @@ export default async function handler(req, res) {
 
   const stationValue = requestValue(req, 'stationId');
   const directionValue = requestValue(req, 'direction');
+  const lineValue = requestValue(req, 'line');
   const limitValue = requestValue(req, 'limit');
   const stationId = typeof stationValue === 'string' && stationValue.trim() ? stationValue.trim() : null;
   const direction = typeof directionValue === 'string' && directionValue.trim() ? directionValue.trim() : null;
+  const line = typeof lineValue === 'string' && lineValue.trim() ? lineValue.trim() : null;
   const limit = limitValue == null ? 3 : numberValue(limitValue);
   if (limitValue != null && (!Number.isInteger(limit) || limit < 1 || limit > 10)) {
     return res.status(400).json({ error: 'limit must be an integer between 1 and 10' });
   }
   if (directionValue != null && (typeof directionValue !== 'string' || directionValue.length > 100)) {
     return res.status(400).json({ error: 'direction must be a string of 100 characters or fewer' });
+  }
+  if (lineValue != null && (typeof lineValue !== 'string' || lineValue.length > 100)) {
+    return res.status(400).json({ error: 'line must be a string of 100 characters or fewer' });
   }
   if (stationValue != null && typeof stationValue !== 'string') {
     return res.status(400).json({ error: 'stationId must be a string' });
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    return res.json(await getNearbyDepartures({ lat, lon, stationId, direction, limit }));
+    return res.json(await getNearbyDepartures({ lat, lon, stationId, direction, line, limit }));
   } catch (error) {
     const status = Number.isInteger(error?.status) ? error.status : 502;
     return res.status(status).json({ error: error?.message || 'Could not load TfL departures' });
