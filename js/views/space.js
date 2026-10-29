@@ -65,7 +65,20 @@ export async function renderSpace(root, spaceId, params) {
   // What every card can do (passed to type.card / defaultCard)
   const ctxFor = (item) => ({
     space, type, item, canEdit: editable, toast,
-    edit: () => openItemForm(space, item, reload),
+    edit: () => {
+      if (type.id === 'events' && view === 'compact') {
+        setView('list');
+        requestAnimationFrame(() => {
+          const card = [...list.querySelectorAll('.card')].find((element) => element.dataset.itemId === item.id);
+          if (!card) return;
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('item-focus');
+          window.setTimeout(() => card.classList.remove('item-focus'), 1800);
+        });
+        return;
+      }
+      openItemForm(space, item, reload);
+    },
     update: (patch) => patchItem(item, patch),
     setStatus: (status) => patchItem(item, { status }),
     cycleStatus: () => {
@@ -77,6 +90,7 @@ export async function renderSpace(root, spaceId, params) {
 
   const renderCard = (item, card) => {
     const cardElement = card(item, ctxFor(item));
+    cardElement.dataset.itemId = item.id;
     const assigneeId = item.data?.assignee_id;
     if (!assigneeId) return cardElement;
 
