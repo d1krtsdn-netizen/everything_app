@@ -257,6 +257,11 @@ export async function renderSpace(root, spaceId, params) {
   const filterAndView = supportsLayouts
     ? h('div', { class: 'filter-bar' }, chips, viewControls)
     : [legacyLayouts ? viewControls : null, chips];
+  const spaceControls = h('div', { class: 'space-controls' },
+    h('div', { class: 'space-controls-inner' },
+      pageSummary,
+      editable ? quick : h('p', { class: 'muted small' }, 'View only – shared with you.'),
+      filterAndView));
   root.replaceChildren(
     header({
       left: backLink(),
@@ -270,13 +275,38 @@ export async function renderSpace(root, spaceId, params) {
       ],
     }),
     h('main', { class: 'page' },
-      pageSummary,
-      editable ? quick : h('p', { class: 'muted small' }, 'View only – shared with you.'),
-      filterAndView, list));
+      spaceControls, list));
 
   // Live updates from other people / devices
   let timer;
   const stop = watchItems(spaceId, () => { clearTimeout(timer); timer = setTimeout(reload, 300); });
+  const scrollContainer = document.scrollingElement || document.documentElement;
+  let lastScrollY = scrollContainer.scrollTop;
+  let scrollDirection = 0;
+  let directionDistance = 0;
+  const onScroll = () => {
+    const scrollY = scrollContainer.scrollTop;
+    const scrollDelta = scrollY - lastScrollY;
+    lastScrollY = scrollY;
+    if (scrollY <= 8) {
+      spaceControls.classList.remove('is-hidden');
+      scrollDirection = 0;
+      directionDistance = 0;
+      return;
+    }
+    if (!scrollDelta) return;
+    const nextDirection = Math.sign(scrollDelta);
+    if (nextDirection !== scrollDirection) {
+      scrollDirection = nextDirection;
+      directionDistance = 0;
+    }
+    directionDistance += Math.abs(scrollDelta);
+    if (directionDistance > 8) {
+      if (scrollDirection > 0) spaceControls.classList.add('is-hidden');
+      else spaceControls.classList.remove('is-hidden');
+    }
+  };
+  scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
   await reload();
 
@@ -284,7 +314,11 @@ export async function renderSpace(root, spaceId, params) {
   const target = params?.get('item') && items.find((i) => i.id === params.get('item'));
   if (target) openItemForm(space, target, reload);
 
-  return stop; // router calls this when leaving the screen
+  return () => {
+    clearTimeout(timer);
+    scrollContainer.removeEventListener('scroll', onScroll);
+    stop();
+  }; // router calls this when leaving the screen
 }
 
 function openSpaceMenu(space) {
