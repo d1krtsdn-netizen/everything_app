@@ -146,6 +146,7 @@ export default {
     { key: 'price', label: 'Price (£)', type: 'number', step: '0.01', placeholder: 'e.g. 12.99' },
     { key: 'due_at', label: 'Due date', type: 'datetime' },
     { key: 'frequency', label: 'Repeats', type: 'select', options: FREQUENCIES, default: 'Monthly' },
+    { key: 'payment_method', label: 'Payment Method', type: 'select', options: ['Manual', 'Automatic'], default: 'Manual' },
     {
       key: 'account', label: 'Payment account', type: 'select', default: '',
       paymentAccounts: true,
@@ -180,7 +181,8 @@ export default {
       h('div', { class: 'bill-list-main' },
         h('div', { class: 'bill-name' }, item.title || 'Untitled bill'),
         h('div', { class: 'bill-kind' }, `${item.data?.category || 'Other'} · ${item.data?.frequency || 'Monthly'}`),
-        h('div', { class: 'bill-account' }, item.data?.account || 'No account selected')),
+        h('div', { class: 'bill-account' },
+          `${item.data?.payment_method || 'Manual'} · ${item.data?.account || 'No account selected'}`)),
       h('div', { class: 'bill-list-details' },
         h('div', { class: 'bill-price' }, formatPrice(item.data?.price) || '—'),
         h('div', { class: 'bill-due' + (late ? ' overdue' : '') },
@@ -196,6 +198,7 @@ export default {
       h('div', { class: 'bill-price' }, formatPrice(item.data?.price) || '—'),
       h('div', { class: 'bill-due' + (late ? ' overdue' : '') },
         item.due_at ? shortDate(item.due_at) : 'No due date'),
-      h('div', { class: 'bill-account' }, item.data?.account || 'No account'));
+      h('div', { class: 'bill-account' },
+        `${item.data?.payment_method || 'Manual'} · ${item.data?.account || 'No account'}`));
   },
 };

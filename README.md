@@ -93,7 +93,7 @@ You need: a Supabase account, a GitHub account, a Vercel account (all free), you
 31. Test: Safari → open any event page → **Share** → scroll the apps row / **Edit Actions** → **Add to Everything**. A notification says "Added to Events: …".
     *First time, iOS may ask "Allow to connect to your-app.vercel.app?" → **Always Allow**.*
 
-## Part 9 – Share a category with someone (e.g. Monia)
+## Part 9 – Share a category with someone 
 
 32. Open the category → **👥** → enter her email → **Can edit** or **View only** → **Invite** → **Copy app link** and send it to her.
 33. She opens the link, creates an account with **that same email**, adds it to her Home Screen and signs in. The category appears.
