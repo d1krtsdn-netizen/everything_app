@@ -1,5 +1,14 @@
 // Tiny helpers for building the UI without a framework.
 
+const lightMode = window.matchMedia('(prefers-color-scheme: light)');
+const iconPath = (path) => lightMode.matches ? path.replace(/\.svg$/, '_light.svg') : path;
+
+lightMode.addEventListener('change', () => {
+  for (const image of document.querySelectorAll('img[data-theme-icon]')) {
+    image.src = iconPath(image.dataset.themeIcon);
+  }
+});
+
 // h('button', { class: 'btn', onclick: fn }, 'Label', child, [more children])
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
@@ -9,7 +18,10 @@ export function h(tag, attrs, ...kids) {
     else if (k === 'style') el.style.cssText = v;
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
     else if (k === 'value' || k === 'checked' || k === 'selected') el[k] = v;
-    else el.setAttribute(k, v === true ? '' : v);
+    else if (tag === 'img' && k === 'src' && typeof v === 'string' && /^icons\/.*\.svg$/.test(v)) {
+      el.dataset.themeIcon = v;
+      el.src = iconPath(v);
+    } else el.setAttribute(k, v === true ? '' : v);
   }
   for (const c of kids.flat(Infinity)) {
     if (c == null || c === false || c === '') continue;
